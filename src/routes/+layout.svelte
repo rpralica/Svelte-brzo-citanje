@@ -1,7 +1,6 @@
 <script>
 	import favicon from '$lib/assets/favicon.svg';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import SideNavbar from '$lib/components/SideNavbar.svelte';
 
 	let { children } = $props();
 </script>
@@ -14,7 +13,7 @@
 
 <div class="d-flex flex-column min-vh-100">
 	<div class="d-flex flex-grow-1">
-		<SideNavbar />
+		
 
 		<main class="flex-grow-1 p-4">
 			{@render children()}
