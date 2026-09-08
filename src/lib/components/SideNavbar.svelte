@@ -25,6 +25,13 @@
         return m * 60 + s;
     }
 
+    // Dok tajmer ne radi, prati promjene inputa i azuriraj remaining odmah
+    $effect(() => {
+        if (!countdownRunning) {
+            remaining = readCountdownInputs();
+        }
+    });
+
     function countdownStart() {
         if (countdownRunning) return;
         if (remaining <= 0) {

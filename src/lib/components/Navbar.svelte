@@ -13,7 +13,7 @@
 	}
 </script>
 
-<nav class="container border border-2 border-info shadow p-3 mb-5 mt-2 bg-body rounded sticky-top">
+<nav class="container border border-2 border-info shadow p-3 mb-5 mt-2 bg-body rounded ">
 	<div class="nav-container">
 		<!-- Logo levo (ima klasu .logo-img za laku kontrolu veličine slike) -->
 		<a href="/" class="logo-link" onclick={closeMenu}>
