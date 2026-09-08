@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<title>Svelte + Firebase CRUD generator</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --panel: #252526;
+    --border: #3c3c3c;
+    --border-strong: #555;
+    --text: #d4d4d4;
+    --text-dim: #9a9a9a;
+    --accent: #4fc1ff;
+    --accent-strong: #0e639c;
+    --danger: #f14c4c;
+    --success: #4ec9b0;
+    --mono: 'Consolas', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0 0 4px;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 28px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 16px;
+    color: var(--accent);
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  input[type=text] {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px 90px 32px;
+    gap: 10px;
+    align-items: end;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-of-type { border-bottom: none; }
+  select {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  .checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .field-headers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px 90px 32px;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-strong);
+    margin-bottom: 4px;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: #2d2d2d;
+    color: var(--text);
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  button:hover { background: #3a3a3a; }
+  .btn-remove {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--danger);
+    padding: 6px 9px;
+    height: 36px;
+  }
+  .btn-remove:hover { background: rgba(241,76,76,0.1); border-color: var(--danger); }
+  .btn-add {
+    margin-top: 12px;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: transparent;
+  }
+  .btn-add:hover { background: rgba(79,193,255,0.08); }
+  .btn-generate {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: white;
+    font-weight: 500;
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  .btn-generate:hover { background: #1177bb; }
+  .actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  .out-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+  textarea {
+    width: 100%;
+    height: 420px;
+    background: #111;
+    color: #ce9178;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    padding: 14px;
+    resize: vertical;
+    white-space: pre;
+  }
+  .copied-msg {
+    font-size: 12px;
+    color: var(--success);
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .copied-msg.show { opacity: 1; }
+  .hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+  code {
+    background: #1a1a1a;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Svelte 5 + Firebase CRUD generator</h1>
+  <p class="sub">Unesi naziv kolekcije i polja, generiši gotov .svelte fajl.</p>
+
+  <div class="panel">
+    <h2>Osnovni podaci</h2>
+    <div class="row2">
+      <div>
+        <label>Naziv kolekcije / lista (množina) — npr. osobe, auti, knjige</label>
+        <input type="text" id="collectionPlural" value="osobe">
+      </div>
+      <div>
+        <label>Naziv jedne stavke (jednina) — npr. osoba, auto, knjiga</label>
+        <input type="text" id="collectionSingular" value="osoba">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Polja</h2>
+    <div class="field-headers">
+      <span>Naziv polja</span>
+      <span>Placeholder / labela</span>
+      <span>Tip</span>
+      <span>Obavezno</span>
+      <span></span>
+    </div>
+    <div id="fieldsContainer"></div>
+    <button class="btn-add" id="addFieldBtn">+ Dodaj polje</button>
+  </div>
+
+  <div class="panel">
+    <h2>Generiši</h2>
+    <div class="actions">
+      <button class="btn-generate" id="generateBtn">Generiši .svelte fajl</button>
+    </div>
+    <p class="hint">Fajl će koristiti <code>$lib/firebase</code> import (isti <code>firebase.js</code> kao i do sada) i istu strukturu forma + tabela kao originalni šablon.</p>
+  </div>
+
+  <div class="panel" id="outputPanel" style="display:none;">
+    <h2>Rezultat</h2>
+    <div class="out-actions">
+      <button id="copyBtn">Kopiraj kod</button>
+      <button id="downloadBtn">Preuzmi .svelte fajl</button>
+      <span class="copied-msg" id="copiedMsg">Kopirano!</span>
+    </div>
+    <textarea id="output" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<script>
+let fieldCount = 0;
+
+function addField(name, label, type, required) {
+  fieldCount++;
+  const id = 'f' + fieldCount;
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.dataset.id = id;
+  row.innerHTML = `
+    <input type="text" class="f-name" value="${name || ''}" placeholder="npr. ime">
+    <input type="text" class="f-label" value="${label || ''}" placeholder="npr. Ime">
+    <select class="f-type">
+      <option value="text" ${type !== 'number' ? 'selected' : ''}>tekst</option>
+      <option value="number" ${type === 'number' ? 'selected' : ''}>broj</option>
+    </select>
+    <div class="checkbox-wrap">
+      <input type="checkbox" class="f-required" ${required ? 'checked' : ''}>
+      <span>obavezno</span>
+    </div>
+    <button class="btn-remove" title="Ukloni polje">&times;</button>
+  `;
+  row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+  document.getElementById('fieldsContainer').appendChild(row);
+}
+
+document.getElementById('addFieldBtn').addEventListener('click', () => addField('', '', 'text', false));
+
+// Pocetna polja - isto kao originalni sablon
+addField('ime', 'Ime', 'text', true);
+addField('prezime', 'Prezime', 'text', true);
+addField('adresa', 'Adresa', 'text', false);
+addField('godine', 'Godine', 'number', false);
+
+function toPascalCase(str) {
+  return str.replace(/(^\w|[-_]\w)/g, m => m.replace(/[-_]/, '').toUpperCase());
+}
+
+function generateCode() {
+  const plural = document.getElementById('collectionPlural').value.trim() || 'stavke';
+  const singular = document.getElementById('collectionSingular').value.trim() || 'stavka';
+
+  const rows = [...document.querySelectorAll('.field-row')];
+  const fields = rows.map(r => ({
+    name: r.querySelector('.f-name').value.trim(),
+    label: r.querySelector('.f-label').value.trim(),
+    type: r.querySelector('.f-type').value,
+    required: r.querySelector('.f-required').checked
+  })).filter(f => f.name);
+
+  if (fields.length === 0) {
+    alert('Dodaj bar jedno polje prije generisanja.');
+    return null;
+  }
+
+  const stateDecls = fields.map(f => `\tlet ${f.name} = $state('');`).join('\n');
+
+  const resetAssigns = fields.map(f => `\t\t${f.name} = '';`).join('\n');
+
+  const requiredCheck = fields.filter(f => f.required).map(f => `!${f.name}`).join(' || ');
+  const validationLine = requiredCheck
+    ? `\t\tif (${requiredCheck}) return;\n\n`
+    : '';
+
+  const docFields = fields.map(f =>
+    f.type === 'number'
+      ? `\t\t\t\t${f.name}: Number(${f.name}) || 0`
+      : `\t\t\t\t${f.name}`
+  ).join(',\n');
+
+  const editAssigns = fields.map(f =>
+    f.type === 'number'
+      ? `\t\t${f.name} = ${singular}.${f.name} || 0;`
+      : `\t\t${f.name} = ${singular}.${f.name} || '';`
+  ).join('\n');
+
+  const formInputs = fields.map(f =>
+    `\t\t<input class="form-control" type="${f.type === 'number' ? 'number' : 'text'}" placeholder="${f.label}" bind:value={${f.name}}${f.required ? ' required' : ''} />`
+  ).join('\n');
+
+  const tableHeaders = fields.map(f =>
+    `\t\t\t\t\t<th data-field="${f.name}" data-sortable="true">${f.label}</th>`
+  ).join('\n');
+
+  const tableCells = fields.map(f =>
+    `\t\t\t\t\t<td> {${singular}.${f.name}} </td>`
+  ).join('\n');
+
+  const colspan = fields.length + 1;
+
+  const code = `<script>
+	import { db } from '$lib/firebase';
+	import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from 'firebase/firestore';
+	import { onMount } from 'svelte';
+
+	let ${plural} = $state([]);
+${stateDecls}
+
+	// State za uređivanje postojeće stavke
+	let urediId = $state(null);
+
+	async function ucitaj${toPascalCase(plural)}() {
+		const querySnapshot = await getDocs(collection(db, '${plural}'));
+		${plural} = querySnapshot.docs.map((doc) => ({
+			id: doc.id,
+			...doc.data()
+		}));
+	}
+
+	onMount(() => {
+		ucitaj${toPascalCase(plural)}();
+	});
+
+	function resetujFormu() {
+		urediId = null;
+${resetAssigns}
+	}
+
+	// CREATE ili UPDATE u zavisnosti da li imamo urediId
+	async function sacuvaj${toPascalCase(singular)}(e) {
+		e.preventDefault();
+${validationLine}		if (urediId) {
+			// UPDATE
+			await updateDoc(doc(db, '${plural}', urediId), {
+${docFields}
+			});
+		} else {
+			// CREATE
+			await addDoc(collection(db, '${plural}'), {
+${docFields}
+			});
+		}
+
+		// Reset polja i osvježenje
+		resetujFormu();
+		await ucitaj${toPascalCase(plural)}();
+	}
+
+	// Priprema podatke u formi za izmjenu
+	function zapocniIzmjenu(${singular}) {
+		urediId = ${singular}.id;
+${editAssigns}
+	}
+
+	async function obrisi${toPascalCase(singular)}(id) {
+		await deleteDoc(doc(db, '${plural}', id));
+		await ucitaj${toPascalCase(plural)}();
+	}
+<\/script>
+
+<main style="max-width: 600px; margin: 40px auto; font-family: sans-serif;">
+	<div class="container m-5 rounded bg-info text-white pt-3 pb-3 shadow-lg d-block mx-auto">
+		<h1 class="text-center">Svelte-Firebase-CRUD</h1>
+	</div>
+
+	<!-- Forma -->
+	<form
+		onsubmit={sacuvaj${toPascalCase(singular)}}
+		style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; background: #f4f4f4; padding: 20px; border-radius: 8px;"
+	>
+		<h1 class="text-center">{urediId ? 'Izmjeni' : 'Dodaj novu stavku'}</h1>
+${formInputs}
+
+		<div style="display: flex; gap: 10px;">
+			<button
+				type="submit"
+				style="flex: 1; padding: 10px; background: {urediId
+					? '#28a745'
+					: '#007bff'}; color: white; border: none; border-radius: 4px; cursor: pointer;"
+			>
+				{urediId ? 'Sačuvaj izmjene' : 'Sačuvaj'}
+			</button>
+			{#if urediId}
+				<button
+					type="button"
+					onclick={resetujFormu}
+					style="padding: 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;"
+					>Otkaži</button
+				>
+			{/if}
+		</div>
+	</form>
+
+	<!-- Lista -->
+	{#if ${plural}.length > 0}
+		<h3>Lista u bazi:</h3>
+	{/if}
+
+	<table
+		id="items-table"
+		class="table table-bordered table-hover"
+		data-search="true"
+		data-pagination="true"
+		data-sortable="true"
+	>
+		{#if ${plural}.length > 0}
+			<thead>
+				<tr>
+					<th data-field="index" data-sortable="true">Br</th>
+${tableHeaders}
+					<th data-field="action" data-sortable="true">Akcija</th>
+				</tr>
+			</thead>
+		{/if}
+		<tbody>
+			{#each ${plural} as ${singular}, i (${singular}.id)}
+				<tr>
+					<td><strong> {i + 1}</strong></td>
+${tableCells}
+					<td>
+						<div style="display: flex; gap: 6px;">
+							<button
+								onclick={() => zapocniIzmjenu(${singular})}
+								style="background: #ffc107; color: black; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;"
+								>Uredi</button
+							>
+							<button
+								onclick={() => obrisi${toPascalCase(singular)}(${singular}.id)}
+								style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;"
+								>Obriši</button
+							>
+						</div>
+					</td>
+				</tr>
+			{:else}
+				<tr>
+					<td colspan="${colspan}" class="text-center">Nema unesenih stavki.</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</main>
+`;
+
+  return { code, plural };
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const result = generateCode();
+  if (!result) return;
+  document.getElementById('output').value = result.code;
+  document.getElementById('outputPanel').style.display = 'block';
+  document.getElementById('outputPanel').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const textarea = document.getElementById('output');
+  textarea.select();
+  document.execCommand('copy');
+  const msg = document.getElementById('copiedMsg');
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 1500);
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const code = document.getElementById('output').value;
+  const plural = document.getElementById('collectionPlural').value.trim() || 'Crud';
+  const filename = toPascalCase(plural) + 'Crud.svelte';
+  const blob = new Blob([code], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
