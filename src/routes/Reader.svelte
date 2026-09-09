@@ -1,9 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 
-function  clearTa() {
-	 pastedText =''
-};
 	// --- Font / zoom ---
 	let fontSize = $state(25);
 	const FONT_MIN = 12;
@@ -172,6 +169,8 @@ function  clearTa() {
 		searchReady = false;
 		searchResults = [];
 		searchQuery = '';
+		raceActive = false;
+		raceStats = [];
 
 		const saved = localStorage.getItem('pdf_stranica_' + currentFileName);
 		if (saved !== null) {
@@ -222,14 +221,73 @@ function  clearTa() {
 		endIndex = null;
 	}
 
+	// --- Race - mjerenje WPM po stranicama ---
+	let raceActive = $state(false);
+	let raceStats = $state([]); // { page, words, seconds, wpm } - samo zavrsene stranice
+	let raceLastTime = 0;
+
+	function startRace() {
+		if (!currentFileName) {
+			Swal.fire('Info', 'Prvo ucitaj PDF fajl.', 'info');
+			return;
+		}
+		raceActive = true;
+		raceStats = [];
+		raceLastTime = Date.now();
+	}
+
+	function recordPageIfRacing() {
+		if (!raceActive) return;
+		const now = Date.now();
+		const seconds = (now - raceLastTime) / 1000;
+		const wordsOnPage = words.length;
+		const minutes = seconds / 60;
+		const wpm = minutes > 0 ? Math.round(wordsOnPage / minutes) : 0;
+		raceStats = [...raceStats, { page: currentPage, words: wordsOnPage, seconds, wpm }];
+		raceLastTime = now;
+	}
+
+	function stopRace() {
+		raceActive = false;
+		if (raceStats.length === 0) {
+			Swal.fire(
+				'Race zavrsen',
+				'Nije zabiljezena nijedna zavrsena stranica (klikni Sljedeca bar jednom tokom trke).',
+				'info'
+			);
+			return;
+		}
+		const totalWords = raceStats.reduce((sum, s) => sum + s.words, 0);
+		const totalSeconds = raceStats.reduce((sum, s) => sum + s.seconds, 0);
+		const totalMinutes = totalSeconds / 60;
+		const avgWpm = totalMinutes > 0 ? Math.round(totalWords / totalMinutes) : 0;
+
+		Swal.fire({
+			title: 'Race zavrsen!',
+			html:
+				'Zavrsenih stranica: ' +
+				raceStats.length +
+				'<br>Ukupno rijeci: ' +
+				totalWords +
+				'<br>Ukupno vrijeme: ' +
+				totalSeconds.toFixed(1) +
+				' s<br><b>Prosjecan WPM: ' +
+				avgWpm +
+				'</b>',
+			icon: 'success'
+		});
+	}
+
 	function pdfNext() {
 		if (currentPage < totalPages) {
+			recordPageIfRacing();
 			renderPdfPage(currentPage + 1).then(scrollToReaderTop);
 		}
 	}
 
 	function pdfPrev() {
 		if (currentPage > 1) {
+			if (raceActive) raceLastTime = Date.now(); // vracanje se ne racuna, samo restart mjerenja
 			renderPdfPage(currentPage - 1).then(scrollToReaderTop);
 		}
 	}
@@ -313,7 +371,7 @@ function  clearTa() {
 		}
 	}
 </script>
-<div class="container ">
+
 <div class="container-fluid reader-page">
 	<!-- 1. TOOLBAR: ucitavanje, font, sirina -->
 	<div class="card mb-3">
@@ -380,13 +438,10 @@ function  clearTa() {
 				rows="4"
 				placeholder="Zalijepi tekst ovdje..."
 				bind:value={pastedText}
-				
 				onselect={onPastedSelect}
 				onmouseup={onPastedSelect}
 				onkeyup={onPastedSelect}
 			></textarea>
-
-			<button style="width: 7rem;justify-content: center;"  onclick={clearTa}  class="btn btn-danger mt-4 d-flex  ms-auto ">Clear</button>
 		</div>
 	</div>
 	{/if}
@@ -446,6 +501,31 @@ function  clearTa() {
 					onclick={pdfNext}
 					disabled={currentPage >= totalPages}>Sljedeca »</button
 				>
+			</div>
+		</div>
+
+		<!-- RACE -->
+		<div class="card mb-3">
+			<div class="card-body py-2 text-center">
+				{#if !raceActive}
+					<button class="btn btn-warning btn-sm" type="button" onclick={startRace}
+						>🏁 Start Race</button
+					>
+				{:else}
+					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}
+						>⏹ Stop Race</button
+					>
+				{/if}
+
+				{#if raceStats.length > 0}
+					<div class="race-stats mt-2">
+						{#each raceStats as s}
+							<div class="info">
+								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} rijeci, {s.seconds.toFixed(1)} s)
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}
@@ -525,7 +605,7 @@ function  clearTa() {
 		</div>
 	{/if}
 </div>
-</div>
+
 <style>
 	.reader-page {
 		max-width: 1100px;
