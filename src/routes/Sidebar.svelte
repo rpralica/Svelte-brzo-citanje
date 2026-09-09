@@ -1,0 +1,243 @@
+<script>
+
+	// --- Countdown timer ---
+	let minutesInput = $state(1);
+	let secondsInput = $state(0);
+	let remaining = $state(60);
+	let countdownRunning = $state(false);
+	let countdownIntervalId = null;
+
+	function formatTime(totalSeconds) {
+		const m = Math.floor(totalSeconds / 60);
+		const s = totalSeconds % 60;
+		const mStr = m < 10 ? '0' + m : '' + m;
+		const sStr = s < 10 ? '0' + s : '' + s;
+		return mStr + ':' + sStr;
+	}
+
+	let countdownDisplay = $derived(formatTime(remaining));
+
+	function readCountdownInputs() {
+		let m = Number(minutesInput);
+		let s = Number(secondsInput);
+		if (isNaN(m) || m < 0) m = 1;
+		if (isNaN(s) || s < 0) s = 0;
+		if (s > 59) s = 59;
+		return m * 60 + s;
+	}
+
+	// Dok tajmer ne radi, prati promjene inputa i azuriraj prikaz odmah
+	$effect(() => {
+		if (!countdownRunning) {
+			remaining = readCountdownInputs();
+		}
+	});
+
+	async function countdownStartClick() {
+		if (countdownRunning) return;
+
+		const seconds = readCountdownInputs();
+		const result = await Swal.fire({
+			title: 'Pokrenuti tajmer?',
+			text: 'Pokrenuti odbrojavanje sa ' + formatTime(seconds) + '?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: 'Da, pokreni',
+			cancelButtonText: 'Otkazi'
+		});
+
+		if (result.isConfirmed) {
+			remaining = seconds;
+			countdownRunning = true;
+			countdownIntervalId = setInterval(() => {
+				if (remaining <= 0) {
+					countdownPause();
+					Swal.fire('Vrijeme je isteklo!', '', 'info');
+					return;
+				}
+				remaining = remaining - 1;
+			}, 1000);
+		}
+	}
+
+	function countdownPause() {
+		countdownRunning = false;
+		if (countdownIntervalId !== null) {
+			clearInterval(countdownIntervalId);
+			countdownIntervalId = null;
+		}
+	}
+
+	function countdownReset() {
+		countdownPause();
+		remaining = readCountdownInputs();
+	}
+
+	// --- Stopwatch ---
+	let elapsed = $state(0);
+	let stopwatchRunning = $state(false);
+	let stopwatchIntervalId = null;
+
+	let stopwatchDisplay = $derived(formatTime(elapsed));
+
+	function stopwatchStart() {
+		if (stopwatchRunning) return;
+		stopwatchRunning = true;
+		stopwatchIntervalId = setInterval(() => {
+			elapsed = elapsed + 1;
+		}, 1000);
+	}
+
+	function stopwatchPause() {
+		stopwatchRunning = false;
+		if (stopwatchIntervalId !== null) {
+			clearInterval(stopwatchIntervalId);
+			stopwatchIntervalId = null;
+		}
+	}
+
+	function stopwatchReset() {
+		stopwatchPause();
+		elapsed = 0;
+	}
+</script>
+
+<!-- Uski fiksni sidebar - uvijek vidljiv, brzi pristup tajmerima -->
+<div class="quick-timer-strip">
+	<div class="qt-block">
+		<div class="qt-label">Countdown</div>
+		<div class="qt-display">{countdownDisplay}</div>
+		<div class="qt-buttons">
+			<button class="qt-btn" type="button" title="Start" onclick={countdownStartClick}>▶</button>
+			<button class="qt-btn" type="button" title="Pauza" onclick={countdownPause}>⏸</button>
+			<button class="qt-btn" type="button" title="Reset" onclick={countdownReset}>↺</button>
+		</div>
+	</div>
+
+	<div class="qt-block">
+		<div class="qt-label">Stoperica</div>
+		<div class="qt-display">{stopwatchDisplay}</div>
+		<div class="qt-buttons">
+			<button class="qt-btn" type="button" title="Start" onclick={stopwatchStart}>▶</button>
+			<button class="qt-btn" type="button" title="Pauza" onclick={stopwatchPause}>⏸</button>
+			<button class="qt-btn" type="button" title="Reset" onclick={stopwatchReset}>↺</button>
+		</div>
+	</div>
+
+	<button
+		class="qt-btn qt-settings"
+		type="button"
+		title="Podesavanja"
+		data-bs-toggle="offcanvas"
+		data-bs-target="#offcanvasScrolling"
+		aria-controls="offcanvasScrolling">⚙</button
+	>
+</div>
+
+<!-- Offcanvas - samo za podesavanje pocetnog vremena countdown-a -->
+<div
+	class="offcanvas offcanvas-start"
+	data-bs-scroll="true"
+	data-bs-backdrop="false"
+	tabindex="-1"
+	id="offcanvasScrolling"
+	aria-labelledby="offcanvasScrollingLabel"
+>
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja tajmera</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body container">
+		<fieldset class="border p-3 rounded">
+			<legend class="px-2 fw-bold text-primary text-center">Countdown</legend>
+			<div class="row">
+				<div class="col-6">
+					<div class="row">
+						<div class="col-5">
+							<label class="form-label">Minuta</label>
+						</div>
+						<div class="col-7">
+							<input type="number" min="0" class="form-control" bind:value={minutesInput} />
+						</div>
+					</div>
+				</div>
+
+				<div class="col-6">
+					<div class="row">
+						<div class="col-5">
+							<label class="form-label">Sekundi</label>
+						</div>
+						<div class="col-7">
+							<input type="number" min="0" max="59" class="form-control" bind:value={secondsInput} />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row mt-3">
+				<span class="h3 text-center">{countdownDisplay}</span>
+			</div>
+		</fieldset>
+
+		<!-- WPM racunanje - dodaces sam kasnije -->
+	</div>
+</div>
+
+<style>
+	.quick-timer-strip {
+		position: fixed;
+		left: 0;
+		top: 70px;
+		bottom: 0;
+		width: 100px;
+		background: #f8f9fa;
+		border-right: 1px solid #ddd;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 10px 4px;
+		gap: 16px;
+		z-index: 1030;
+		overflow-y: auto;
+	}
+	.qt-block {
+		width: 100%;
+		text-align: center;
+	}
+	.qt-label {
+		font-size: 11px;
+		font-weight: bold;
+		color: #555;
+		margin-bottom: 2px;
+	}
+	.qt-display {
+		font-size: 15px;
+		font-weight: bold;
+		margin-bottom: 4px;
+	}
+	.qt-buttons {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		align-items: center;
+	}
+	.qt-btn {
+		width: 36px;
+		height: 32px;
+		border: 1px solid #999;
+		border-radius: 4px;
+		background: #fff;
+		cursor: pointer;
+		font-size: 15px;
+		line-height: 1;
+	}
+	.qt-btn:active {
+		background: #e0e0e0;
+	}
+	.qt-settings {
+		margin-top: auto;
+		width: 40px;
+		height: 40px;
+		font-size: 18px;
+	}
+</style>

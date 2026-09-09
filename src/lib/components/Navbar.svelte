@@ -37,6 +37,7 @@
 			<a href="/" class:active={isActive('/')} onclick={closeMenu}>Home</a>
 			<a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Tools</a>
 		</div>
+	
 	</div>
 </nav>
 
