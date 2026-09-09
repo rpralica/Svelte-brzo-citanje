@@ -2,15 +2,26 @@
 	import { onMount } from 'svelte';
 
 	// --- Font / zoom ---
-	let fontSize = $state(25);
+	const FONT_STORAGE_KEY = 'reader_font';
+	let fontSize = $state(
+		typeof localStorage !== 'undefined' && localStorage.getItem(FONT_STORAGE_KEY) !== null
+			? parseInt(localStorage.getItem(FONT_STORAGE_KEY), 10)
+			: 25
+	);
 	const FONT_MIN = 12;
 	const FONT_MAX = 60;
 
+	function clearTa() {
+		pastedText = '';
+	}
+
 	function changeFont(delta) {
 		fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, fontSize + delta));
+		localStorage.setItem(FONT_STORAGE_KEY, String(fontSize));
 	}
 	function resetFont() {
 		fontSize = 25;
+		localStorage.setItem(FONT_STORAGE_KEY, String(fontSize));
 	}
 
 	// --- Sirina reader-content diva (Smanji / Povecaj) - pamti se u localStorage ---
@@ -405,12 +416,16 @@
 				<div class="toolbar-group d-flex align-items-center gap-2">
 					<span class="fw-bold small">Širina</span>
 					<div class="btn-group btn-group-sm" role="group">
-						<button class="btn btn-outline-info" type="button" onclick={() => changeWidth(-WIDTH_STEP)}
-							>−</button
+						<button
+							class="btn btn-outline-info"
+							type="button"
+							onclick={() => changeWidth(-WIDTH_STEP)}>−</button
 						>
 						<span class="btn btn-light disabled">{readerWidthPercent}%</span>
-						<button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}
-							>+</button
+						<button
+							class="btn btn-outline-info"
+							type="button"
+							onclick={() => changeWidth(WIDTH_STEP)}>+</button
 						>
 					</div>
 				</div>
@@ -427,23 +442,25 @@
 
 	<!-- PASTE TEKST - samo brojanje rijeci (sakriveno kad je PDF ucitan) -->
 	{#if !currentFileName}
-	<div class="card mb-3">
-		<div class="card-body py-2">
-			<div class="d-flex justify-content-between align-items-center mb-1">
-				<span class="fw-bold small">Zalijepi tekst (brojanje rijeci)</span>
-				<span class="info">Rijeci: {pastedWordCount} &nbsp;|&nbsp; Selektovano rijeci: {selectedWordCount}</span>
+		<div class="card mb-3">
+			<div class="card-body py-2">
+				<div class="d-flex justify-content-between align-items-center mb-1">
+					<span class="fw-bold small">Zalijepi tekst (brojanje rijeci)</span>
+					<span class="info"
+						>Rijeci: {pastedWordCount} &nbsp;|&nbsp; Selektovano rijeci: {selectedWordCount}</span
+					>
+				</div>
+				<textarea
+					class="form-control"
+					rows="4"
+					placeholder="Zalijepi tekst ovdje..."
+					bind:value={pastedText}
+					onselect={onPastedSelect}
+					onmouseup={onPastedSelect}
+					onkeyup={onPastedSelect}></textarea>
 			</div>
-			<textarea
-				class="form-control"
-				rows="4"
-				placeholder="Zalijepi tekst ovdje..."
-				bind:value={pastedText}
-				onselect={onPastedSelect}
-				onmouseup={onPastedSelect}
-				onkeyup={onPastedSelect}
-			></textarea>
+			<button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto">Clear</button>
 		</div>
-	</div>
 	{/if}
 
 	{#if currentFileName}
@@ -512,8 +529,7 @@
 						>🏁 Start Race</button
 					>
 				{:else}
-					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}
-						>⏹ Stop Race</button
+					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}>⏹ Stop Race</button
 					>
 				{/if}
 
@@ -521,7 +537,9 @@
 					<div class="race-stats mt-2">
 						{#each raceStats as s}
 							<div class="info">
-								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} rijeci, {s.seconds.toFixed(1)} s)
+								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} rijeci, {s.seconds.toFixed(
+									1
+								)} s)
 							</div>
 						{/each}
 					</div>
