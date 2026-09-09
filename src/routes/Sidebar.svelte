@@ -1,4 +1,5 @@
 <script>
+	
 
 	// --- Countdown timer ---
 	let minutesInput = $state(1);
@@ -189,7 +190,7 @@
 		left: 0;
 		top: 70px;
 		bottom: 0;
-		width: 100px;
+		width: 78px;
 		background: #f8f9fa;
 		border-right: 1px solid #ddd;
 		display: flex;
@@ -239,5 +240,43 @@
 		width: 40px;
 		height: 40px;
 		font-size: 18px;
+	}
+
+	/* Na malim ekranima (telefon/uski tablet) - traka ide na dno, vodoravno */
+	@media (max-width: 768px) {
+		.quick-timer-strip {
+			left: 0;
+			right: 0;
+			top: auto;
+			bottom: 0;
+			width: 100%;
+			height: 68px;
+			flex-direction: row;
+			justify-content: space-evenly;
+			align-items: center;
+			padding: 4px 6px;
+			gap: 10px;
+			border-right: none;
+			border-top: 1px solid #ddd;
+			overflow-x: auto;
+			overflow-y: hidden;
+		}
+		.qt-block {
+			width: auto;
+		}
+		.qt-buttons {
+			flex-direction: row;
+		}
+		.qt-btn {
+			width: 32px;
+			height: 28px;
+			font-size: 13px;
+		}
+		.qt-settings {
+			margin-top: 0;
+			width: 36px;
+			height: 36px;
+			font-size: 16px;
+		}
 	}
 </style>
