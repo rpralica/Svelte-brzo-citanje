@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 
-	// --- Font / zoom ---
+	// --- Font / zoom - pamti se u localStorage ---
 	const FONT_STORAGE_KEY = 'reader_font';
 	let fontSize = $state(
 		typeof localStorage !== 'undefined' && localStorage.getItem(FONT_STORAGE_KEY) !== null
@@ -10,18 +10,6 @@
 	);
 	const FONT_MIN = 12;
 	const FONT_MAX = 60;
-
-	function clearTa() {
-		pastedText = '';
-	}
-
-	let raceAverageWpm = $derived.by(() => {
-		if (raceStats.length === 0) return 0;
-		const totalWords = raceStats.reduce((s, x) => s + x.words, 0);
-		const totalSeconds = raceStats.reduce((s, x) => s + x.seconds, 0);
-		const totalMinutes = totalSeconds / 60;
-		return totalMinutes > 0 ? Math.floor(totalWords / totalMinutes) : 0;
-	});
 
 	function changeFont(delta) {
 		fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, fontSize + delta));
@@ -190,6 +178,10 @@
 		searchQuery = '';
 		raceActive = false;
 		raceStats = [];
+		raceMode = 'single';
+		player1Results = null;
+		player2Results = null;
+		currentPlayer = 1;
 
 		const saved = localStorage.getItem('pdf_stranica_' + currentFileName);
 		if (saved !== null) {
@@ -240,18 +232,56 @@
 		endIndex = null;
 	}
 
-	// --- Race - mjerenje WPM po stranicama ---
+	// --- Race - mjerenje WPM po stranicama (1 igrac ili takmicenje 2 igraca) ---
 	let raceActive = $state(false);
+	let raceMode = $state('single'); // 'single' | 'two'
 	let raceStats = $state([]); // { page, words, seconds, wpm } - samo zavrsene stranice
 	let raceLastTime = 0;
+	let raceLengthInput = $state(5); // broj stranica za takmicenje
+	let raceStartPage = 1;
+	let currentPlayer = $state(1);
+	let player1Results = $state(null);
+	let player2Results = $state(null);
+
+	function computeResults(stats) {
+		const totalWords = stats.reduce((s, x) => s + x.words, 0);
+		const totalSeconds = stats.reduce((s, x) => s + x.seconds, 0);
+		const totalMinutes = totalSeconds / 60;
+		const wpm = totalMinutes > 0 ? Math.round(totalWords / totalMinutes) : 0;
+		return { words: totalWords, seconds: totalSeconds, wpm, pages: stats.length };
+	}
+
+	let raceAverageWpm = $derived.by(() => {
+		if (raceStats.length === 0) return 0;
+		const totalWords = raceStats.reduce((s, x) => s + x.words, 0);
+		const totalSeconds = raceStats.reduce((s, x) => s + x.seconds, 0);
+		const totalMinutes = totalSeconds / 60;
+		return totalMinutes > 0 ? totalWords / totalMinutes : 0;
+	});
 
 	function startRace() {
 		if (!currentFileName) {
 			Swal.fire('Info', 'Prvo ucitaj PDF fajl.', 'info');
 			return;
 		}
+		raceMode = 'single';
 		raceActive = true;
 		raceStats = [];
+		raceLastTime = Date.now();
+	}
+
+	function startTwoPlayerRace() {
+		if (!currentFileName) {
+			Swal.fire('Info', 'Prvo ucitaj PDF fajl.', 'info');
+			return;
+		}
+		raceMode = 'two';
+		raceStartPage = currentPage;
+		currentPlayer = 1;
+		player1Results = null;
+		player2Results = null;
+		raceStats = [];
+		raceActive = true;
 		raceLastTime = Date.now();
 	}
 
@@ -276,31 +306,99 @@
 			);
 			return;
 		}
-		const totalWords = raceStats.reduce((sum, s) => sum + s.words, 0);
-		const totalSeconds = raceStats.reduce((sum, s) => sum + s.seconds, 0);
-		const totalMinutes = totalSeconds / 60;
-		const avgWpm = totalMinutes > 0 ? Math.round(totalWords / totalMinutes) : 0;
+		const r = computeResults(raceStats);
+		Swal.fire({
+			title: 'Race zavrsen!',
+			html:
+				'Zavrsenih stranica: ' +
+				r.pages +
+				'<br>Ukupno rijeci: ' +
+				r.words +
+				'<br>Ukupno vrijeme: ' +
+				r.seconds.toFixed(1) +
+				' s<br><b>Prosjecan WPM: ' +
+				r.wpm +
+				'</b>',
+			icon: 'success'
+		});
+	}
 
-		// Swal.fire({
-		// 	title: 'Race zavrsen!',
-		// 	html:
-		// 		'Zavrsenih stranica: ' +
-		// 		raceStats.length +
-		// 		'<br>Ukupno rijeci: ' +
-		// 		totalWords +
-		// 		'<br>Ukupno vrijeme: ' +
-		// 		totalSeconds.toFixed(1) +
-		// 		' s<br><b>Prosjecan WPM: ' +
-		// 		avgWpm +
-		// 		'</b>',
-		// 	icon: 'success'
-		// });
+	async function checkRaceAutoFinish() {
+		if (raceActive && raceMode === 'two' && raceStats.length >= raceLengthInput) {
+			await finishPlayerTurn();
+		}
+	}
+
+	async function finishPlayerTurn() {
+		raceActive = false;
+		const results = computeResults(raceStats);
+
+		if (currentPlayer === 1) {
+			player1Results = results;
+			const res = await Swal.fire({
+				title: 'Igrac 1 zavrsio!',
+				html:
+					'WPM: <b>' +
+					results.wpm +
+					'</b><br>Vrijeme: ' +
+					results.seconds.toFixed(1) +
+					's<br>Stranica: ' +
+					results.pages,
+				icon: 'success',
+				confirmButtonText: 'Igrac 2 - Start',
+				showCancelButton: true,
+				cancelButtonText: 'Otkazi'
+			});
+			if (res.isConfirmed) {
+				await renderPdfPage(raceStartPage);
+				scrollToReaderTop();
+				currentPlayer = 2;
+				raceStats = [];
+				raceActive = true;
+				raceLastTime = Date.now();
+			}
+		} else {
+			player2Results = results;
+			showFinalComparison();
+		}
+	}
+
+	function showFinalComparison() {
+		const p1 = player1Results;
+		const p2 = player2Results;
+		let winnerText;
+		if (p1.wpm > p2.wpm) winnerText = 'Pobjednik: Igrac 1! 🏆';
+		else if (p2.wpm > p1.wpm) winnerText = 'Pobjednik: Igrac 2! 🏆';
+		else winnerText = 'Nerijeseno!';
+
+		Swal.fire({
+			title: 'Trka zavrsena!',
+			html:
+				'<div style="text-align:left">' +
+				'<b>Igrac 1:</b> ' +
+				p1.wpm +
+				' wpm (' +
+				p1.seconds.toFixed(1) +
+				's)<br>' +
+				'<b>Igrac 2:</b> ' +
+				p2.wpm +
+				' wpm (' +
+				p2.seconds.toFixed(1) +
+				's)<br><br>' +
+				'<b>' +
+				winnerText +
+				'</b></div>',
+			icon: 'success'
+		});
 	}
 
 	function pdfNext() {
 		if (currentPage < totalPages) {
 			recordPageIfRacing();
-			renderPdfPage(currentPage + 1).then(scrollToReaderTop);
+			renderPdfPage(currentPage + 1).then(() => {
+				scrollToReaderTop();
+				checkRaceAutoFinish();
+			});
 		}
 	}
 
@@ -424,16 +522,12 @@
 				<div class="toolbar-group d-flex align-items-center gap-2">
 					<span class="fw-bold small">Širina</span>
 					<div class="btn-group btn-group-sm" role="group">
-						<button
-							class="btn btn-outline-info"
-							type="button"
-							onclick={() => changeWidth(-WIDTH_STEP)}>−</button
+						<button class="btn btn-outline-info" type="button" onclick={() => changeWidth(-WIDTH_STEP)}
+							>−</button
 						>
 						<span class="btn btn-light disabled">{readerWidthPercent}%</span>
-						<button
-							class="btn btn-outline-info"
-							type="button"
-							onclick={() => changeWidth(WIDTH_STEP)}>+</button
+						<button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}
+							>+</button
 						>
 					</div>
 				</div>
@@ -450,25 +544,23 @@
 
 	<!-- PASTE TEKST - samo brojanje rijeci (sakriveno kad je PDF ucitan) -->
 	{#if !currentFileName}
-		<div class="card mb-3">
-			<div class="card-body py-2">
-				<div class="d-flex justify-content-between align-items-center mb-1">
-					<span class="fw-bold small">Zalijepi tekst (brojanje rijeci)</span>
-					<span class="info"
-						>Rijeci: {pastedWordCount} &nbsp;|&nbsp; Selektovano rijeci: {selectedWordCount}</span
-					>
-				</div>
-				<textarea
-					class="form-control"
-					rows="4"
-					placeholder="Zalijepi tekst ovdje..."
-					bind:value={pastedText}
-					onselect={onPastedSelect}
-					onmouseup={onPastedSelect}
-					onkeyup={onPastedSelect}></textarea>
+	<div class="card mb-3">
+		<div class="card-body py-2">
+			<div class="d-flex justify-content-between align-items-center mb-1">
+				<span class="fw-bold small">Zalijepi tekst (brojanje rijeci)</span>
+				<span class="info">Rijeci: {pastedWordCount} &nbsp;|&nbsp; Selektovano rijeci: {selectedWordCount}</span>
 			</div>
-			<button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2">Clear</button>
+			<textarea
+				class="form-control"
+				rows="4"
+				placeholder="Zalijepi tekst ovdje..."
+				bind:value={pastedText}
+				onselect={onPastedSelect}
+				onmouseup={onPastedSelect}
+				onkeyup={onPastedSelect}
+			></textarea>
 		</div>
+	</div>
 	{/if}
 
 	{#if currentFileName}
@@ -533,11 +625,31 @@
 		<div class="card mb-3">
 			<div class="card-body py-2 text-center">
 				{#if !raceActive}
-					<button class="btn btn-warning btn-sm" type="button" onclick={startRace}
-						>🏁 Start Race</button
-					>
+					<div class="d-flex justify-content-center align-items-center gap-2 flex-wrap mb-2">
+						<button class="btn btn-warning btn-sm" type="button" onclick={startRace}
+							>🏁 Start Race</button
+						>
+						<span class="info">ili</span>
+						<div class="input-group input-group-sm" style="width: auto;">
+							<span class="input-group-text">Stranica:</span>
+							<input
+								type="number"
+								min="1"
+								class="form-control"
+								style="width: 60px;"
+								bind:value={raceLengthInput}
+							/>
+						</div>
+						<button class="btn btn-info btn-sm" type="button" onclick={startTwoPlayerRace}
+							>⚔ Takmicenje (2 igraca)</button
+						>
+					</div>
 				{:else}
-					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}>⏹ Stop Race</button
+					{#if raceMode === 'two'}
+						<div class="fw-bold mb-1">Igrac {currentPlayer} na redu — stranica {raceStats.length} / {raceLengthInput}</div>
+					{/if}
+					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}
+						>⏹ Stop Race</button
 					>
 				{/if}
 
@@ -545,16 +657,12 @@
 					<div class="race-stats mt-2">
 						{#each raceStats as s}
 							<div class="info">
-								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} rijeci, {s.seconds.toFixed(
-									1
-								)} s)
+								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} rijeci, {s.seconds.toFixed(1)} s)
 							</div>
 						{/each}
 						{#if !raceActive}
 							<hr class="my-1" />
-							<div class="info text-info fw-bold">
-								Prosjek:<strong class="text-danger"> {raceAverageWpm}</strong>
-							</div>
+							<div class="info"><strong>Prosjek: {raceAverageWpm.toFixed(2)}</strong></div>
 						{/if}
 					</div>
 				{/if}
@@ -578,8 +686,6 @@
 			>{' '}
 		{/each}
 	</div>
-
-	<!-- Donji Sljedeća -> Prethodna -->
 
 	{#if currentFileName}
 		<div class="d-flex justify-content-center mb-3">
