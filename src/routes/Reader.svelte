@@ -645,9 +645,10 @@
 		max-width: 1100px;
 	}
 	.reader-content {
-		line-height: 1.6;
-		white-space: normal;
-	}
+    font-family: 'Lexend', sans-serif;
+    line-height: 1.6;
+    white-space: normal;
+}
 	.word {
 		cursor: pointer;
 	}
