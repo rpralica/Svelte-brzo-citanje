@@ -41,14 +41,16 @@
         <!-- Hamburger dugme - VIDLJIVO SAMO NA MALIM EKRANIMA kad se meni sakrije -->
         <button class="menu-toggle" onclick={() => (isOpen = !isOpen)} >
             {#if isOpen}
-                ✕ Zatvori
+                ✕ 
             {:else}
                 ☰
             {/if}
         </button>
 
-        <!-- Linkovi -->
-        <div class="nav-links d-flex mx-auto" class:active-menu={isOpen}>
+        <!-- Linkovi - BEZ Bootstrap d-flex! Ta klasa je display:flex !important
+             i nadjaca nas display:none iz media query-ja ispod, pa se stavke
+             ne gube kad se pojavi hamburger. Raspored/centriranje radimo sami. -->
+        <div class="nav-links mx-auto" class:active-menu={isOpen}>
             <a href="/" class:active={isActive('/')} onclick={closeMenu}>Home</a>
             <a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Tools</a>
         </div>
@@ -90,6 +92,7 @@
         border-radius: 4px;
     }
 
+    /* Na desktopu je meni uvijek vidljiv kao red */
     .nav-links {
         display: flex;
         align-items: center;
@@ -150,12 +153,14 @@
             display: block;
         }
 
+        /* Sad ovo stvarno radi jer nema vise Bootstrap d-flex !important
+           koji ga je ranije nadjacavao - stavke nestaju kad se pojavi hamburger */
         .nav-links {
             display: none;
             width: 100%;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 22px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #ddd;
@@ -167,6 +172,7 @@
 
         .nav-links a {
             font-size: 1.2rem;
+            padding: 10px 0;
         }
     }
 </style>

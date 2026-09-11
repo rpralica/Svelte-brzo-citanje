@@ -2,7 +2,9 @@
     import Sidebar from './Sidebar.svelte';
     import Reader from './Reader.svelte';
 </script>
-
+<svelte:head>
+  <title>Brzo Čitanje</title>
+</svelte:head>
 <Sidebar />
 
 <div class="reader-main container">
