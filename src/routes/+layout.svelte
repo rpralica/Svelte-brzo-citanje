@@ -1,35 +1,45 @@
 <script>
-	import favicon from '$lib/assets/favicon.svg';
-	import Navbar from '$lib/components/Navbar.svelte';
+    import { onMount } from 'svelte';
+    import { auth } from '$lib/firebase';
+    import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+    import Navbar from '$lib/components/Navbar.svelte';
 
-	let { children } = $props();
+    let user = $state(null);
+
+    // Prati da li je korisnik ulogovan ili odjavljen
+    onMount(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            user = currentUser;
+        });
+        return () => unsubscribe();
+    });
+
+    // Funkcija za Google prijavu koja se proslijeđuje u navbar
+    async function loginWithGoogle() {
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+            // Možeš dodati SweetAlert ili ostaviti da Firebase automatski osvježi stanje
+        } catch (error) {
+            console.error('Greška pri prijavi:', error);
+        }
+    }
+
+    // Funkcija za odjavu
+    async function handleSignOut() {
+        try {
+            await signOut(auth);
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Greška pri odjavi:', error);
+        }
+    }
+
+    let { children } = $props();
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-	
-</svelte:head>
+<!-- Navbar dobija ulogovanog korisnika i funkcije za prijavu/odjavu -->
+<Navbar {user} onLogin={loginWithGoogle} onLogout={handleSignOut} />
 
-<Navbar></Navbar>
-
-<div class="d-flex flex-column min-vh-100">
-	<div class="d-flex flex-grow-1">
-		
-
-		<main class="flex-grow-1 p-4">
-			{@render children()}
-		</main>
-	</div>
-
-	<footer class="text-white text-center py-3 mt-auto">
-		<div
-			class="container rounded col-12 rounded"
-			style="box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; background:#a0e0c8"
-		>
-			<br />
-			<h3 class="text-center text-primary">Copyright &copy by Matejko Team</h3>
-			<br />
-		</div>
-	</footer>
-</div>
-	
+<!-- Ovdje se renderuje sadržaj stranica (npr. Reader.svelte) -->
+{@render children()}

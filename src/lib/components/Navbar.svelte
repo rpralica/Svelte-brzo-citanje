@@ -1,6 +1,9 @@
 <script>
     import { page } from '$app/state';
 
+    // Primamo korisnika, kao i funkcije za prijavu i odjavu kroz props
+    let { user = null, onLogin = () => {}, onLogout = () => {} } = $props();
+
     // Stanje za otvaranje/zatvaranje menija na mobilnom
     let isOpen = $state(false);
     let navEl; // referenca na <nav> element, za detekciju klika van menija
@@ -11,6 +14,12 @@
 
     function closeMenu() {
         isOpen = false;
+    }
+
+    // Pomoćna funkcija koja siječe email i uzima dio prije @
+    function getUsername(email) {
+        if (!email) return '';
+        return email.split('@')[0];
     }
 
     // Kad je meni otvoren, klik BILO GDJE van <nav> elementa ga zatvara
@@ -47,12 +56,24 @@
             {/if}
         </button>
 
-        <!-- Linkovi - BEZ Bootstrap d-flex! Ta klasa je display:flex !important
-             i nadjaca nas display:none iz media query-ja ispod, pa se stavke
-             ne gube kad se pojavi hamburger. Raspored/centriranje radimo sami. -->
-        <div class="nav-links mx-auto" class:active-menu={isOpen}>
+        <!-- Središnji linkovi -->
+        <div class="nav-links" class:active-menu={isOpen}>
             <a href="/" class:active={isActive('/')} onclick={closeMenu}>Home</a>
             <a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Tools</a>
+        </div>
+
+        <!-- Desna strana: Auth sekcija skroz desno -->
+        <div class="auth-section" class:active-menu={isOpen}>
+            {#if user}
+                <div class="user-info">
+                    <span class="logged-text">Logged as: <strong class="text-success">{getUsername(user.email)}</strong></span>
+                    <a href="#logout" class="logout-link" onclick={(e) => { e.preventDefault(); onLogout(); closeMenu(); }}>
+                        Logout
+                    </a>
+                </div>
+            {:else}
+                <button class="btn btn-outline-dark btn-sm text-success fw-bold" onclick={() => { onLogin(); closeMenu(); }}>🔑 Login</button>
+            {/if}
         </div>
     </div>
 </nav>
@@ -83,20 +104,12 @@
         object-fit: contain;
     }
 
-    .placeholder-logo {
-        font-weight: bold;
-        font-size: 1.2rem;
-        color: #333;
-        background: #e2e8f0;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-
-    /* Na desktopu je meni uvijek vidljiv kao red */
+    /* Na desktopu je meni uvijek vidljiv kao red, centriran automatskim marginama */
     .nav-links {
         display: flex;
         align-items: center;
         gap: 40px;
+        margin: 0 auto;
     }
 
     .menu-toggle {
@@ -148,31 +161,76 @@
         color: deepskyblue;
     }
 
+    /* Auth sekcija desno */
+    .auth-section {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .logged-text {
+        white-space: nowrap;
+    }
+
+    .logout-link {
+        color: #dc3545;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 2px;
+        transition: opacity 0.2s ease;
+    }
+
+    .logout-link:hover {
+        opacity: 0.75;
+        text-decoration: underline;
+    }
+
     @media (max-width: 768px) {
         .menu-toggle {
             display: block;
         }
 
-        /* Sad ovo stvarno radi jer nema vise Bootstrap d-flex !important
-           koji ga je ranije nadjacavao - stavke nestaju kad se pojavi hamburger */
         .nav-links {
             display: none;
             width: 100%;
             flex-direction: column;
             align-items: center;
-            gap: 22px;
+            gap: 15px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #ddd;
         }
 
-        .nav-links.active-menu {
+        .auth-section {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .nav-links.active-menu, 
+        .auth-section.active-menu {
             display: flex;
+        }
+
+        .user-info {
+            align-items: center;
         }
 
         .nav-links a {
             font-size: 1.2rem;
-            padding: 10px 0;
+            padding: 5px 0;
         }
     }
 </style>
