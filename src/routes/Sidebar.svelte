@@ -1,12 +1,11 @@
 <script>
-	
-
 	// --- Countdown timer ---
 	let minutesInput = $state(1);
 	let secondsInput = $state(0);
 	let remaining = $state(60);
 	let countdownRunning = $state(false);
 	let countdownIntervalId = null;
+	let hasStarted = $state(false); // false = jos nije pokrenut, prikaz prati inpute uzivo
 
 	function formatTime(totalSeconds) {
 		const m = Math.floor(totalSeconds / 60);
@@ -27,38 +26,33 @@
 		return m * 60 + s;
 	}
 
-	// Dok tajmer ne radi, prati promjene inputa i azuriraj prikaz odmah
+	// Dok tajmer JOS NIJE pokrenut, prati promjene inputa i azuriraj prikaz odmah.
+	// Nakon prvog starta (hasStarted=true) ovo se vise ne aktivira, pa Pauza ne
+	// prepisuje "remaining" nazad na vrijednost iz inputa.
 	$effect(() => {
-		if (!countdownRunning) {
+		if (!hasStarted) {
 			remaining = readCountdownInputs();
 		}
 	});
 
-	async function countdownStartClick() {
+	function countdownStart() {
 		if (countdownRunning) return;
 
-		const seconds = readCountdownInputs();
-		const result = await Swal.fire({
-			title: 'Pokrenuti tajmer?',
-			text: 'Pokrenuti odbrojavanje sa ' + formatTime(seconds) + '?',
-			icon: 'question',
-			showCancelButton: true,
-			confirmButtonText: 'Da, pokreni',
-			cancelButtonText: 'Otkazi'
-		});
-
-		if (result.isConfirmed) {
-			remaining = seconds;
-			countdownRunning = true;
-			countdownIntervalId = setInterval(() => {
-				if (remaining <= 0) {
-					countdownPause();
-					Swal.fire('Vrijeme je isteklo!', '', 'info');
-					return;
-				}
-				remaining = remaining - 1;
-			}, 1000);
+		// Svjeza vrijednost iz inputa samo ako pokrecemo prvi put ili je isteklo,
+		// inace nastavljamo (resume) od tamo gdje je pauzirano.
+		if (!hasStarted || remaining <= 0) {
+			remaining = readCountdownInputs();
 		}
+		hasStarted = true;
+		countdownRunning = true;
+		countdownIntervalId = setInterval(() => {
+			if (remaining <= 0) {
+				countdownPause();
+				Swal.fire('Vrijeme je isteklo!', '', 'info');
+				return;
+			}
+			remaining = remaining - 1;
+		}, 1000);
 	}
 
 	function countdownPause() {
@@ -71,6 +65,7 @@
 
 	function countdownReset() {
 		countdownPause();
+		hasStarted = false; // effect ce ponovo sinhronizovati prikaz sa inputima
 		remaining = readCountdownInputs();
 	}
 
@@ -109,7 +104,7 @@
 		<div class="qt-label">Countdown</div>
 		<div class="qt-display">{countdownDisplay}</div>
 		<div class="qt-buttons">
-			<button class="qt-btn" type="button" title="Start" onclick={countdownStartClick}>▶</button>
+			<button class="qt-btn" type="button" title="Start" onclick={countdownStart}>▶</button>
 			<button class="qt-btn" type="button" title="Pauza" onclick={countdownPause}>⏸</button>
 			<button class="qt-btn" type="button" title="Reset" onclick={countdownReset}>↺</button>
 		</div>
