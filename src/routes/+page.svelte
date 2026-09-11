@@ -7,7 +7,7 @@
 </svelte:head>
 <Sidebar />
 
-<div class="reader-main container">
+<div class="d-flex justify-content-center container">
     <Reader />
 </div>
 
