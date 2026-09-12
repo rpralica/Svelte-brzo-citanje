@@ -20,7 +20,6 @@
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user) {
-                // Kada se korisnik uloguje, povuci njegova podešavanja
                 await loadUserSettings();
             }
         });
@@ -65,6 +64,7 @@
                 const data = snap.data();
                 if (data.reader_font) fontSize = data.reader_font;
                 if (data.reader_sirina) readerWidthPercent = data.reader_sirina;
+                if (data.pace_wpm) paceWpm = data.pace_wpm;
             }
         } catch (e) {
             console.error('Greška pri učitavanju iz Firestore:', e);
@@ -162,7 +162,6 @@
     }
 
     // --- Firebase pozicija (broj stranice po fajlu) ---
-    // Koristimo hash fajla ili ime prilagođeno za Firestore ključ (Firestore ne voli specijalne znakove u nazivima polja, pa ime fajla stavljamo unutar objekta)
     function sanitizeKey(name) {
         return name.replace(/[.#$[\]]/g, '_');
     }
@@ -177,8 +176,7 @@
 
         const safeKey = sanitizeKey(currentFileName);
         const userRef = doc(db, 'users', currentUser.uid);
-        
-        // Uzmi trenutno stanje iz baze da provjerimo staru poziciju
+
         const snap = await getDoc(userRef);
         const data = snap.exists() ? snap.data() : {};
         const existingPages = data.pdf_stranice || {};
@@ -202,7 +200,7 @@
             if (existing !== null) {
                 previousPositionLabel = 'Prethodna pozicija: stranica ' + existing;
             }
-            
+
             existingPages[safeKey] = currentPage;
             await setDoc(userRef, { pdf_stranice: existingPages }, { merge: true });
 
@@ -220,11 +218,11 @@
             Swal.fire('Greška', 'Morate biti prijavljeni i učitati PDF fajl.', 'warning');
             return;
         }
-        
+
         const safeKey = sanitizeKey(currentFileName);
         const userRef = doc(db, 'users', currentUser.uid);
         const snap = await getDoc(userRef);
-        
+
         if (!snap.exists() || !snap.data().pdf_stranice || !snap.data().pdf_stranice[safeKey]) {
             Swal.fire('Info', 'Nema sačuvane pozicije za ovaj fajl.', 'info');
             return;
@@ -267,8 +265,9 @@
         searchQuery = '';
         raceActive = false;
         raceStats = [];
+        stopPacer();
+        isPaused = false;
 
-        // Provjeri u Firebase-u da li postoji sačuvana stranica
         if (currentUser) {
             const safeKey = sanitizeKey(currentFileName);
             const userRef = doc(db, 'users', currentUser.uid);
@@ -324,7 +323,7 @@
 
     // --- Race ---
     let raceActive = $state(false);
-    let raceStats = $state([]); 
+    let raceStats = $state([]);
     let raceLastTime = 0;
 
     function startRace() {
@@ -335,6 +334,7 @@
         raceActive = true;
         raceStats = [];
         raceLastTime = Date.now();
+        isPaused = false;
     }
 
     function recordPageIfRacing() {
@@ -350,23 +350,141 @@
 
     function stopRace() {
         raceActive = false;
+        isPaused = false;
         if (raceStats.length === 0) {
             Swal.fire('Race završen', 'Nije zabilježena nijedna završena stranica.', 'info');
             return;
         }
     }
 
+    // --- Pacer - highlight koji se sam pomjera zadatim tempom (WPM), u grupama rijeci ---
+    let paceWpm = $state(300);
+    let paceChunkSize = $state(3); // koliko rijeci se highlight-uje odjednom
+    let paceActive = $state(false); // pacer ukljucen za trenutnu sesiju
+    let paceIndex = $state(0);
+    let paceIntervalId = null;
+
+    function paceChunk() {
+        return Math.max(1, Number(paceChunkSize) || 1);
+    }
+
+    function paceIntervalMs() {
+        const wpm = Math.max(50, Number(paceWpm) || 300);
+        return (60000 / wpm) * paceChunk();
+    }
+
+    function paceTotalChunks() {
+        return Math.ceil(words.length / paceChunk());
+    }
+
+    function paceChunkRange(idx) {
+        const chunk = paceChunk();
+        const start = idx * chunk;
+        const end = Math.min(words.length, start + chunk);
+        return [start, end];
+    }
+
+    function isInPaceChunk(i) {
+        if (!paceActive) return false;
+        const [s, e] = paceChunkRange(paceIndex);
+        return i >= s && i < e;
+    }
+
+    function paceTick() {
+        paceIndex = paceIndex + 1;
+        if (paceIndex >= paceTotalChunks()) {
+            if (paceIntervalId !== null) {
+                clearInterval(paceIntervalId);
+                paceIntervalId = null;
+            }
+        }
+    }
+
+    function startPaceIntervalInternal() {
+        if (paceIntervalId !== null) {
+            clearInterval(paceIntervalId);
+            paceIntervalId = null;
+        }
+        paceIntervalId = setInterval(paceTick, paceIntervalMs());
+    }
+
+    function startPacer() {
+        if (!currentFileName) {
+            Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+            return;
+        }
+        saveSettingToFirebase('pace_wpm', paceWpm);
+        paceActive = true;
+        paceIndex = 0;
+        isPaused = false;
+        startPaceIntervalInternal();
+    }
+
+    function stopPacer() {
+        if (paceIntervalId !== null) {
+            clearInterval(paceIntervalId);
+            paceIntervalId = null;
+        }
+        paceActive = false;
+        paceIndex = 0;
+    }
+
+    // --- Jedinstvena Pauza/Nastavi za Race I Pacer zajedno ---
+    let isPaused = $state(false);
+    let racePausedAt = 0;
+
+    function pauseSession() {
+        if (isPaused) return;
+        if (!raceActive && !paceActive) return;
+        isPaused = true;
+        if (raceActive) {
+            racePausedAt = Date.now();
+        }
+        if (paceActive && paceIntervalId !== null) {
+            clearInterval(paceIntervalId);
+            paceIntervalId = null;
+        }
+    }
+
+    function resumeSession() {
+        if (!isPaused) return;
+        isPaused = false;
+        if (raceActive) {
+            const pausedMs = Date.now() - racePausedAt;
+            raceLastTime += pausedMs;
+        }
+        if (paceActive && paceIndex < paceTotalChunks()) {
+            startPaceIntervalInternal();
+        }
+    }
+
     function pdfNext() {
         if (currentPage < totalPages) {
+            if (isPaused) {
+                Swal.fire('Info', 'Klikni "Nastavi" prije prelaska na sljedeću stranicu.', 'info');
+                return;
+            }
             recordPageIfRacing();
-            renderPdfPage(currentPage + 1).then(scrollToReaderTop);
+            renderPdfPage(currentPage + 1).then(() => {
+                scrollToReaderTop();
+                if (paceActive) {
+                    paceIndex = 0;
+                    startPaceIntervalInternal();
+                }
+            });
         }
     }
 
     function pdfPrev() {
         if (currentPage > 1) {
-            if (raceActive) raceLastTime = Date.now(); 
-            renderPdfPage(currentPage - 1).then(scrollToReaderTop);
+            if (raceActive) raceLastTime = Date.now();
+            renderPdfPage(currentPage - 1).then(() => {
+                scrollToReaderTop();
+                if (paceActive) {
+                    paceIndex = 0;
+                    startPaceIntervalInternal();
+                }
+            });
         }
     }
 
@@ -379,7 +497,7 @@
 
     // --- Pretraga ---
     let searchQuery = $state('');
-    let searchResults = $state([]); 
+    let searchResults = $state([]);
 
     function runSearch() {
         const q = searchQuery.trim().toLowerCase();
@@ -449,7 +567,7 @@
 </script>
 
 <div class="container-fluid reader-page">
-   
+
     <!-- 1. TOOLBAR -->
     <div class="card mb-3">
         <div class="card-body py-2">
@@ -556,6 +674,18 @@
             </div>
         </div>
 
+        <!-- JEDINSTVENA PAUZA/NASTAVI - pauzira i Race i Pacer zajedno -->
+        {#if raceActive || paceActive}
+            <div class="d-flex justify-content-center mb-2">
+                {#if isPaused}
+                    <button class="btn btn-success btn-sm" type="button" onclick={resumeSession}>▶ Nastavi</button>
+                {:else}
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick={pauseSession}>⏸ Pauza</button>
+                {/if}
+            </div>
+        {/if}
+
+        <!-- RACE -->
         <div class="card mb-3">
             <div class="card-body py-2 text-center">
                 {#if !raceActive}
@@ -581,6 +711,41 @@
                 {/if}
             </div>
         </div>
+
+        <!-- PACER -->
+        <div class="card mb-3">
+            <div class="card-body py-2 text-center">
+                {#if !paceActive}
+                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                        <div class="input-group input-group-sm" style="width: auto;">
+                            <span class="input-group-text">WPM</span>
+                            <input
+                                type="number"
+                                min="50"
+                                step="10"
+                                class="form-control"
+                                style="width: 70px;"
+                                bind:value={paceWpm}
+                            />
+                        </div>
+                        <div class="input-group input-group-sm" style="width: auto;">
+                            <span class="input-group-text">Grupa riječi</span>
+                            <select class="form-select" style="width: 65px;" bind:value={paceChunkSize}>
+                                {#each Array.from({ length: 10 }, (_, k) => k + 1) as n}
+                                    <option value={n}>{n}</option>
+                                {/each}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm" type="button" onclick={startPacer}>🎯 Start Pacer</button>
+                    </div>
+                {:else}
+                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                        <button class="btn btn-danger btn-sm" type="button" onclick={stopPacer}>⏹ Stop Pacer</button>
+                        <span class="info">Tempo: {paceWpm} wpm, grupa: {paceChunkSize}</span>
+                    </div>
+                {/if}
+            </div>
+        </div>
     {/if}
 
     <div
@@ -594,6 +759,7 @@
                 class:pos-mark={posIndex === i}
                 class:start-mark={startIndex === i}
                 class:end-mark={endIndex === i}
+                class:pace-mark={isInPaceChunk(i)}
                 onclick={() => wordClick(i)}>{word}</span
             >{' '}
         {/each}
@@ -644,8 +810,9 @@
     .word { cursor: pointer; }
     .word:hover { background: #eee; }
     .pos-mark { background: #ffe066; border-radius: 2px; }
-    .start-name { background: #a5d8ff; border-radius: 2px; }
+    .start-mark { background: #a5d8ff; border-radius: 2px; }
     .end-mark { background: #b2f2bb; border-radius: 2px; }
+    .pace-mark { background: #ffa8a8; border-radius: 2px; }
     .info { font-size: 15px; color: #333; }
     .search-results { max-height: 250px; overflow-y: auto; }
     .search-result-item { padding: 4px 2px; cursor: pointer; border-bottom: 1px solid #eee; }
