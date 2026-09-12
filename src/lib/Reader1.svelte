@@ -1,4 +1,3 @@
-<!-- Backup Reader.svelte -->
 <script>
     import { onMount } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
@@ -450,26 +449,7 @@
 </script>
 
 <div class="container-fluid reader-page">
-    <!-- AUTH BAR -->
-    <div class="card mb-3 bg-light">
-        <div class="card-body py-2 d-flex justify-content-between align-items-center">
-            <div>
-                {#if currentUser}
-                    <span class="small fw-bold text-success">Prijavljen: {currentUser.email || currentUser.displayName}</span>
-                {:else}
-                    <span class="small text-muted">Niste prijavljeni. Pozicije se neće čuvati na serveru.</span>
-                {/if}
-            </div>
-            <div>
-                {#if !currentUser}
-                    <button class="btn btn-outline-dark btn-sm" onclick={loginWithGoogle}>🔑 Prijava (Google)</button>
-                {:else}
-                    <button class="btn btn-outline-danger btn-sm" onclick={logout}>Odjava</button>
-                {/if}
-            </div>
-        </div>
-    </div>
-
+   
     <!-- 1. TOOLBAR -->
     <div class="card mb-3">
         <div class="card-body py-2">
