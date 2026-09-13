@@ -1,4 +1,5 @@
 <script>
+/* global Swal */
 	import Wpm from "./Wpm.svelte";
 
 	// --- Countdown timer ---

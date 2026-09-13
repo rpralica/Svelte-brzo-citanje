@@ -713,25 +713,35 @@
 <div class="container-fluid ">
 
     <!-- 1. TOOLBAR -->
-    <div style="width: 79rem;" class=" card mb-3">
-        <div class="card-body py-2">
-            <div class="d-flex flex-wrap align-items-center gap-4">
-                <div class="toolbar-group">
-                    <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        class="form-control form-control-sm"
-                        onchange={onFileSelected}
-                    />
-                </div>
+   <div class="card mb-3 w-100">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            
+            <!-- Fajl input i Zatvori PDF (grupisano da stoji logično) -->
+            <div class="d-flex align-items-center flex-grow-1 gap-2" style="min-width: 250px;">
+                <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    class="form-control form-control-sm flex-grow-1"
+                    onchange={onFileSelected}
+                />
+                {#if currentFileName}
+                    <button class="btn btn-outline-danger btn-sm text-nowrap" type="button" onclick={closePdf}>
+                        ✕ Zatvori
+                    </button>
+                {/if}
+            </div>
 
+            <!-- Kontrole za Font, Širinu i Margine -->
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                
                 <div class="toolbar-group d-flex align-items-center gap-2">
                     <span class="fw-bold small">Font</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(-1)}>A-</button>
-                        <span class="btn btn-light disabled">{fontSize}</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(1)}>A+</button>
-                        <button class="btn btn-outline-secondary" type="button" onclick={resetFont}>Reset</button>
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}>A-</button>
+                        <span class="btn btn-light disabled px-2">{fontSize}</span>
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}>A+</button>
+                        <button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
                     </div>
                 </div>
 
@@ -739,13 +749,10 @@
                     <span class="fw-bold small">Širina</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(-WIDTH_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{readerWidthPercent}%</span>
+                        <span class="btn btn-light disabled px-2">{readerWidthPercent}%</span>
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}>+</button>
                     </div>
                 </div>
-
-
-
 
                 <div class="toolbar-group d-flex align-items-center gap-2">
                     <div class="form-check form-switch mb-0">
@@ -765,7 +772,7 @@
                     <span class="fw-bold small">Lijeva</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{marginLeftPercent}%</span>
+                        <span class="btn btn-light disabled px-2">{marginLeftPercent}%</span>
                         <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
@@ -773,22 +780,17 @@
                 <div class="toolbar-group d-flex align-items-center gap-2">
                     <span class="fw-bold small">Desna</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{marginRightPercent}%</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled px-2">{marginRightPercent}%</span>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
 
-                {#if currentFileName}
-                    <div class="toolbar-group">
-                        <button class="btn btn-outline-dark btn-sm" type="button" onclick={closePdf}
-                            >✕ Zatvori PDF (novi tekst)</button
-                        >
-                    </div>
-                {/if}
             </div>
+
         </div>
     </div>
+</div>
 
     {#if infoMessage}
         <div class="alert alert-info py-1 px-2">{infoMessage}</div>
