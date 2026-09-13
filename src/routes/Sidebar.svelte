@@ -122,7 +122,16 @@
 		</div>
 	</div>
 
-	<p class="fw-bold">Wpm</p>
+	<div>
+		<button
+		class="btn btn-outline-info "
+		type="button"
+		title="Podesavanja i WpM"
+		data-bs-toggle="offcanvas"
+		data-bs-target="#offcanvasScrolling"
+		aria-controls="offcanvasScrolling">Wpm</button
+	>
+	</div>
 	
 
 	<button
@@ -145,7 +154,7 @@
 	aria-labelledby="offcanvasScrollingLabel"
 >
 	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja tajmera</h5>
+		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja i WpM</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body container">
@@ -179,7 +188,7 @@
 				<span class="h3 text-center">{countdownDisplay}</span>
 			</div>
 		</fieldset>
-<!-- Ovdje će ići Wpm.svelte -->
+
 <Wpm></Wpm>
 
 		<!-- WPM racunanje - dodaces sam kasnije -->

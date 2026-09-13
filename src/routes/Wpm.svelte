@@ -13,22 +13,22 @@
 	});
 </script>
 <fieldset class="border p-3 rounded mt-3">
-<legend class="text-center text-success fw-bold">Words per minut</legend>
+<legend class="text-center text-success fw-bold fst-italic">Words per minut</legend>
 
 
 <div class="container">
 	<div class="row">
 		<div class="col-2">
-			<label class=" fw-bold" for="">Riječi</label>
-			<label class=" fw-bold mt-4" for="">Min</label>
-			<label class="fw-bold mt-4" for="">Sek</label>
+			<label class=" fw-bold text-info" for="">Riječi</label>
+			<label class=" fw-bold mt-4 text-info" for="">Min</label>
+			<label class="fw-bold mt-4 text-info" for="">Sek</label>
 		</div>
 		<div class="col-10">
 			<input bind:value={rijeci} type="number" class="form-control w-50 mb-2 fw-bold" />
 			<input bind:value={min} type="number" class="form-control w-50 fw-bold" />
 			<input bind:value={sek} type="number" class="form-control w-50 mt-2 fw-bold" />
 		</div>
-		<p class="mt-4"><strong>Rezultat:</strong><span class="fw-bold offset-1">{rez}</span></p>
+		<p class="mt-4 text-success"><strong>Rezultat:</strong><span class="fw-bold ms-2">{rez}</span></p>
 	</div>
 </div>
 </fieldset>
