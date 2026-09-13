@@ -1,4 +1,6 @@
 <script>
+	import Wpm from "./Wpm.svelte";
+
 	// --- Countdown timer ---
 	let minutesInput = $state(1);
 	let secondsInput = $state(0);
@@ -120,10 +122,13 @@
 		</div>
 	</div>
 
+	<p class="fw-bold">Wpm</p>
+	
+
 	<button
 		class="qt-btn qt-settings"
 		type="button"
-		title="Podesavanja"
+		title="Podesavanja i WpM"
 		data-bs-toggle="offcanvas"
 		data-bs-target="#offcanvasScrolling"
 		aria-controls="offcanvasScrolling">⚙</button
@@ -174,6 +179,8 @@
 				<span class="h3 text-center">{countdownDisplay}</span>
 			</div>
 		</fieldset>
+<!-- Ovdje će ići Wpm.svelte -->
+<Wpm></Wpm>
 
 		<!-- WPM racunanje - dodaces sam kasnije -->
 	</div>

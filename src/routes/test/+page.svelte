@@ -143,7 +143,7 @@ Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obas
     let testStartTime = 0;
     let results = $state([]); 
     
-    let fontSize = $state(16);
+    let fontSize = $state(20);
     let isJustified = $state(true); // Default uključeno obostrano poravnanje
 
     function changeFont(delta) {

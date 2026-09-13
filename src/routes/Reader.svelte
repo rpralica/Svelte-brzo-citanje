@@ -1,10 +1,9 @@
 <script>
+/* global Swal*/
     import { onMount } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
-        signInWithPopup, 
-        GoogleAuthProvider, 
-        signOut, 
+       
         onAuthStateChanged 
     } from 'firebase/auth';
     import { 
@@ -26,23 +25,9 @@
         return unsubscribe;
     });
 
-    async function loginWithGoogle() {
-        const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-            Swal.fire({ title: 'Uspješan login!', icon: 'success', timer: 1000, showConfirmButton: false });
-        } catch (error) {
-            Swal.fire('Greška', error.message, 'error');
-        }
-    }
+    
 
-    async function logout() {
-        await signOut(auth);
-        currentUser = null;
-        currentFileName = '';
-        words = [];
-        Swal.fire({ title: 'Odjavljeni ste', icon: 'info', timer: 1000, showConfirmButton: false });
-    }
+    
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
