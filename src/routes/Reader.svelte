@@ -707,10 +707,13 @@
     }
 </script>
 
-<div class="container-fluid reader-page">
+
+
+
+<div class="container-fluid ">
 
     <!-- 1. TOOLBAR -->
-    <div class="card mb-3">
+    <div style="width: 79rem;" class=" card mb-3">
         <div class="card-body py-2">
             <div class="d-flex flex-wrap align-items-center gap-4">
                 <div class="toolbar-group">
@@ -741,6 +744,9 @@
                     </div>
                 </div>
 
+
+
+
                 <div class="toolbar-group d-flex align-items-center gap-2">
                     <div class="form-check form-switch mb-0">
                         <input
@@ -756,16 +762,16 @@
                 </div>
 
                 <div class="toolbar-group d-flex align-items-center gap-2">
-                    <span class="fw-bold small">Margina L</span>
+                    <span class="fw-bold small">Lijeva</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
                         <span class="btn btn-light disabled">{marginLeftPercent}%</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
 
                 <div class="toolbar-group d-flex align-items-center gap-2">
-                    <span class="fw-bold small">Margina D</span>
+                    <span class="fw-bold small">Desna</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
                         <span class="btn btn-light disabled">{marginRightPercent}%</span>
