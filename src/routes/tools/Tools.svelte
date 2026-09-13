@@ -170,28 +170,7 @@ style="grid-template-columns: repeat({size}, 1fr); max-width: {size * 70}px;"
 
 </div>
 
-<div class="row mt-5">
-<div class="col-12">
-<hr />
-<h2>Backup podataka</h2>
-<p class="text-muted">Izvezi poziciju čitanja, markere i postavke u fajl, ili uvezi prethodno izvezen fajl.</p>
 
-<div class="d-flex gap-2 align-items-center">
-<button class="btn btn-outline-primary" type="button" onclick={exportData}>
-                        Izvezi (JSON)
-</button>
-
-<label class="btn btn-outline-success mb-0">
-                        Uvezi (JSON)
-<input type="file" accept="application/json" style="display: none" onchange={importData} />
-</label>
-
-                    {#if importStatus}
-<span class="ms-2">{importStatus}</span>
-                    {/if}
-</div>
-</div>
-</div>
 </div>
 
 <style>

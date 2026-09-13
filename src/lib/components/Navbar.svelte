@@ -61,8 +61,9 @@
 
 		<!-- Središnji linkovi -->
 		<div class="nav-links" class:active-menu={isOpen}>
-			<a href="/" class:active={isActive('/')} onclick={closeMenu}>Home</a>
-			<a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Tools</a>
+			<a href="/" class:active={isActive('/')} onclick={closeMenu}>Čitanje</a>
+			<a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Dodaci</a>
+			<a href="/test" class:active={isActive('/test')} onclick={closeMenu}>Test</a>
 		</div>
 
 		<!-- Desna strana: Auth sekcija skroz desno -->

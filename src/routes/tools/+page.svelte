@@ -1,5 +1,5 @@
 <script>
-	import Schultetable from "./Schultetable.svelte";
+	import Tools from "./Tools.svelte";
 
   
 </script>
@@ -8,7 +8,7 @@
 </svelte:head>
 <div class="container">
    
-   <Schultetable></Schultetable>
+   <Tools></Tools>
 </div>
 
 

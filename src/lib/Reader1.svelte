@@ -65,6 +65,9 @@
                 if (data.reader_font) fontSize = data.reader_font;
                 if (data.reader_sirina) readerWidthPercent = data.reader_sirina;
                 if (data.pace_wpm) paceWpm = data.pace_wpm;
+                if (data.margin_left !== undefined) marginLeftPercent = data.margin_left;
+                if (data.margin_right !== undefined) marginRightPercent = data.margin_right;
+                if (data.margin_lines_enabled !== undefined) marginLinesEnabled = data.margin_lines_enabled;
             }
         } catch (e) {
             console.error('Greška pri učitavanju iz Firestore:', e);
@@ -106,6 +109,29 @@
     function changeWidth(delta) {
         readerWidthPercent = Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, readerWidthPercent + delta));
         saveSettingToFirebase('reader_sirina', readerWidthPercent);
+    }
+
+    // --- Vodilice (margine) - tanke uspravne linije, grubo pomjerljive ---
+    let marginLinesEnabled = $state(false);
+    let marginLeftPercent = $state(10);
+    let marginRightPercent = $state(10);
+    const MARGIN_MIN = 0;
+    const MARGIN_MAX = 40;
+    const MARGIN_STEP = 2;
+
+    function toggleMarginLines() {
+        marginLinesEnabled = !marginLinesEnabled;
+        saveSettingToFirebase('margin_lines_enabled', marginLinesEnabled);
+    }
+
+    function changeMarginLeft(delta) {
+        marginLeftPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginLeftPercent + delta));
+        saveSettingToFirebase('margin_left', marginLeftPercent);
+    }
+
+    function changeMarginRight(delta) {
+        marginRightPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginRightPercent + delta));
+        saveSettingToFirebase('margin_right', marginRightPercent);
     }
 
     // --- Tekst / rijeci (trenutna PDF stranica) ---
@@ -349,6 +375,11 @@
     }
 
     function stopRace() {
+        // Ako PDF ima samo jednu stranicu, nema "Sljedeca" koja bi zabiljezila
+        // citanje - zato Stop Race ovdje racuna tu jedinu stranicu kao zavrsenu.
+        if (raceActive && totalPages === 1 && raceStats.length === 0) {
+            recordPageIfRacing();
+        }
         raceActive = false;
         isPaused = false;
         if (raceStats.length === 0) {
@@ -389,6 +420,24 @@
         const [s, e] = paceChunkRange(paceIndex);
         return i >= s && i < e;
     }
+
+    function scrollPaceIntoViewIfNeeded() {
+        if (typeof document === 'undefined') return;
+        const el = document.querySelector('.pace-mark');
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const viewH = window.innerHeight || document.documentElement.clientHeight;
+        if (rect.top < 0 || rect.bottom > viewH) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    $effect(() => {
+        paceIndex; // prati promjenu
+        if (paceActive) {
+            scrollPaceIntoViewIfNeeded();
+        }
+    });
 
     function paceTick() {
         paceIndex = paceIndex + 1;
@@ -488,6 +537,33 @@
         }
     }
 
+    // --- Idi direktno na stranicu ---
+    let goToPageInput = $state(1);
+
+    function goToPage() {
+        let target = parseInt(goToPageInput, 10);
+        if (isNaN(target)) {
+            Swal.fire('Info', 'Unesi ispravan broj stranice.', 'info');
+            return;
+        }
+        if (target < 1) target = 1;
+        if (target > totalPages) target = totalPages;
+
+        if (isPaused) {
+            Swal.fire('Info', 'Klikni "Nastavi" prije skoka na drugu stranicu.', 'info');
+            return;
+        }
+        if (raceActive) raceLastTime = Date.now(); // skok se ne racuna kao zavrsena stranica
+
+        renderPdfPage(target).then(() => {
+            scrollToReaderTop();
+            if (paceActive) {
+                paceIndex = 0;
+                startPaceIntervalInternal();
+            }
+        });
+    }
+
     let readerContentEl;
     function scrollToReaderTop() {
         if (readerContentEl) {
@@ -553,6 +629,57 @@
     let pastedWordCount = $derived(splitToWords(pastedText).length);
     let selectedWordCount = $state(0);
 
+    // --- Start/Stop mjerenje WPM za zalijepljeni tekst ---
+    let taRaceActive = $state(false);
+    let taStartTime = 0;
+
+    function startTaRace() {
+        if (!pastedText.trim()) {
+            Swal.fire('Info', 'Nema teksta za mjerenje.', 'info');
+            return;
+        }
+        taRaceActive = true;
+        taStartTime = Date.now();
+    }
+
+    function stopTaRace() {
+        if (!taRaceActive) return;
+        const seconds = (Date.now() - taStartTime) / 1000;
+        const minutes = seconds / 60;
+        const wpm = minutes > 0 ? Math.round(pastedWordCount / minutes) : 0;
+        taRaceActive = false;
+        Swal.fire({
+            title: 'Rezultat',
+            html:
+                'Riječi: ' +
+                pastedWordCount +
+                '<br>Vrijeme: ' +
+                seconds.toFixed(1) +
+                's<br><b>WPM: ' +
+                wpm +
+                '</b>',
+            icon: 'success'
+        });
+    }
+
+    // --- Vracanje na paste-text prikaz bez refresh-a stranice ---
+    function closePdf() {
+        currentFileName = '';
+        words = [];
+        pdfDoc = null;
+        currentPage = 1;
+        totalPages = 1;
+        pagesWordsCache = [];
+        searchReady = false;
+        searchResults = [];
+        searchQuery = '';
+        raceActive = false;
+        raceStats = [];
+        stopPacer();
+        isPaused = false;
+        infoMessage = '';
+    }
+
     function onPastedSelect(event) {
         const ta = event.target;
         const start = ta.selectionStart;
@@ -566,7 +693,7 @@
     }
 </script>
 
-<div class="container-fluid reader-page">
+<div class="container ">
 
     <!-- 1. TOOLBAR -->
     <div class="card mb-3">
@@ -581,7 +708,7 @@
                     />
                 </div>
 
-                <div class="toolbar-group d-flex align-items-center gap-2">
+                <div class="toolbar-group d-flex align-items-center gap-2 r">
                     <span class="fw-bold small">Font</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(-1)}>A-</button>
@@ -599,6 +726,46 @@
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}>+</button>
                     </div>
                 </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <div class="form-check form-switch mb-0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="marginLinesToggle"
+                            checked={marginLinesEnabled}
+                            onchange={toggleMarginLines}
+                        />
+                        <label class="form-check-label small" for="marginLinesToggle">Margine</label>
+                    </div>
+                </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <span class="fw-bold small">Margina L</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled">{marginLeftPercent}%</span>
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <span class="fw-bold small">Margina D</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled">{marginRightPercent}%</span>
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
+                    </div>
+                </div>
+
+                {#if currentFileName}
+                    <div class="toolbar-group">
+                        <button class="btn btn-outline-dark btn-sm" type="button" onclick={closePdf}
+                            >✕ Zatvori PDF (novi tekst)</button
+                        >
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
@@ -625,6 +792,17 @@
                     onselect={onPastedSelect}
                     onmouseup={onPastedSelect}
                     onkeyup={onPastedSelect}></textarea>
+                <div class="d-flex gap-2 mt-2">
+                    {#if !taRaceActive}
+                        <button class="btn btn-warning btn-sm" type="button" onclick={startTaRace}
+                            >🏁 Start</button
+                        >
+                    {:else}
+                        <button class="btn btn-danger btn-sm" type="button" onclick={stopTaRace}
+                            >⏹ Stop</button
+                        >
+                    {/if}
+                </div>
             </div>
             <button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2">Clear</button>
         </div>
@@ -667,10 +845,23 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-center mb-2">
+        <div class="d-flex justify-content-center align-items-center gap-2 mb-2 flex-wrap">
             <div class="btn-group">
                 <button class="btn btn-outline-primary" type="button" onclick={pdfPrev} disabled={currentPage <= 1}>« Prethodna</button>
                 <button class="btn btn-outline-primary" type="button" onclick={pdfNext} disabled={currentPage >= totalPages}>Sljedeća »</button>
+            </div>
+            <div class="input-group input-group-sm" style="width: auto;">
+                <span class="input-group-text">Idi na str.</span>
+                <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    class="form-control"
+                    style="width: 70px;"
+                    bind:value={goToPageInput}
+                    onkeydown={(e) => e.key === 'Enter' && goToPage()}
+                />
+                <button class="btn btn-info" type="button" onclick={goToPage}>Idi</button>
             </div>
         </div>
 
@@ -748,21 +939,27 @@
         </div>
     {/if}
 
-    <div
-        bind:this={readerContentEl}
-        class="reader-content border rounded p-3 mb-3"
-        style="font-size: {fontSize}px; width: {readerWidthPercent}%; margin: 0 auto;"
-    >
-        {#each words as word, i}
-            <span
-                class="word"
-                class:pos-mark={posIndex === i}
-                class:start-mark={startIndex === i}
-                class:end-mark={endIndex === i}
-                class:pace-mark={isInPaceChunk(i)}
-                onclick={() => wordClick(i)}>{word}</span
-            >{' '}
-        {/each}
+    <div class="reader-content-wrap" style="width: {readerWidthPercent}%; margin: 0 auto;">
+        {#if marginLinesEnabled}
+            <div class="margin-line" style="left: {marginLeftPercent}%;"></div>
+            <div class="margin-line" style="right: {marginRightPercent}%;"></div>
+        {/if}
+        <div
+            bind:this={readerContentEl}
+            class="reader-content border rounded p-3 mb-3"
+            style="font-size: {fontSize}px;"
+        >
+            {#each words as word, i}
+                <span
+                    class="word"
+                    class:pos-mark={posIndex === i}
+                    class:start-mark={startIndex === i}
+                    class:end-mark={endIndex === i}
+                    class:pace-mark={isInPaceChunk(i)}
+                    onclick={() => wordClick(i)}>{word}</span
+                >{' '}
+            {/each}
+        </div>
     </div>
 
     {#if currentFileName}
@@ -806,13 +1003,26 @@
 
 <style>
     .reader-page { max-width: 1100px; }
+    .reader-content-wrap {
+        position: relative;
+    }
+    .margin-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #6068e0d5;
+        opacity: 0.6;
+        pointer-events: none;
+        z-index: 2;
+    }
     .reader-content { font-family: 'Lexend', sans-serif; line-height: 1.6; white-space: normal; }
     .word { cursor: pointer; }
     .word:hover { background: #eee; }
     .pos-mark { background: #ffe066; border-radius: 2px; }
     .start-mark { background: #a5d8ff; border-radius: 2px; }
     .end-mark { background: #b2f2bb; border-radius: 2px; }
-    .pace-mark { background: #ffa8a8; border-radius: 2px; }
+    .pace-mark { background: var(--pace-mark-color, #ffa8a8); border-radius: 2px; }
     .info { font-size: 15px; color: #333; }
     .search-results { max-height: 250px; overflow-y: auto; }
     .search-result-item { padding: 4px 2px; cursor: pointer; border-bottom: 1px solid #eee; }

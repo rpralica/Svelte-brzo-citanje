@@ -291,6 +291,7 @@
         searchQuery = '';
         raceActive = false;
         raceStats = [];
+        raceCheckpoints = [];
         stopPacer();
         isPaused = false;
 
@@ -359,9 +360,24 @@
         }
         raceActive = true;
         raceStats = [];
+        raceCheckpoints = [];
         raceLastTime = Date.now();
         isPaused = false;
     }
+
+    // --- Provjere brzine na 1, 5 i 10 minuta (kumulativni WPM od pocetka trke) ---
+    let raceCheckpoints = $state([]); // { atMinutes, wpm, words, seconds }
+    const CHECKPOINT_THRESHOLDS = [
+        { atMinutes: 1, seconds: 60 },
+        { atMinutes: 5, seconds: 300 },
+        { atMinutes: 10, seconds: 600 }
+    ];
+
+    let raceCheckpointAverage = $derived.by(() => {
+        if (raceCheckpoints.length === 0) return 0;
+        const sum = raceCheckpoints.reduce((s, c) => s + c.wpm, 0);
+        return Math.round(sum / raceCheckpoints.length);
+    });
 
     function recordPageIfRacing() {
         if (!raceActive) return;
@@ -372,6 +388,19 @@
         const wpm = minutes > 0 ? Math.round(wordsOnPage / minutes) : 0;
         raceStats = [...raceStats, { page: currentPage, words: wordsOnPage, seconds, wpm }];
         raceLastTime = now;
+
+        const cumWords = raceStats.reduce((s, x) => s + x.words, 0);
+        const cumSeconds = raceStats.reduce((s, x) => s + x.seconds, 0);
+        for (const t of CHECKPOINT_THRESHOLDS) {
+            const already = raceCheckpoints.some((c) => c.atMinutes === t.atMinutes);
+            if (!already && cumSeconds >= t.seconds) {
+                const cumWpm = Math.round(cumWords / (cumSeconds / 60));
+                raceCheckpoints = [
+                    ...raceCheckpoints,
+                    { atMinutes: t.atMinutes, wpm: cumWpm, words: cumWords, seconds: cumSeconds }
+                ];
+            }
+        }
     }
 
     function stopRace() {
@@ -693,7 +722,7 @@
     }
 </script>
 
-<div class="container ">
+<div class="container-fluid reader-page">
 
     <!-- 1. TOOLBAR -->
     <div class="card mb-3">
@@ -708,7 +737,7 @@
                     />
                 </div>
 
-                <div class="toolbar-group d-flex align-items-center gap-2 r">
+                <div class="toolbar-group d-flex align-items-center gap-2">
                     <span class="fw-bold small">Font</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(-1)}>A-</button>
@@ -900,6 +929,19 @@
                         {/if}
                     </div>
                 {/if}
+
+                {#if raceCheckpoints.length > 0}
+                    <div class="race-checkpoints mt-2">
+                        <div class="info fw-bold">Provjere (kumulativno):</div>
+                        {#each raceCheckpoints as c}
+                            <div class="info">{c.atMinutes}. min: <strong>{c.wpm} wpm</strong></div>
+                        {/each}
+                        <hr class="my-1" />
+                        <div class="info text-info fw-bold">
+                            Prosjek provjera:<strong class="text-danger"> {raceCheckpointAverage}</strong>
+                        </div>
+                    </div>
+                {/if}
             </div>
         </div>
 
@@ -1010,8 +1052,8 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 2px;
-        background: #6068e0d5;
+        width: 1px;
+        background: #ff6b6b;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
