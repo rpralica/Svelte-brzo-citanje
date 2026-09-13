@@ -65,6 +65,9 @@
                 if (data.reader_font) fontSize = data.reader_font;
                 if (data.reader_sirina) readerWidthPercent = data.reader_sirina;
                 if (data.pace_wpm) paceWpm = data.pace_wpm;
+                if (data.margin_left !== undefined) marginLeftPercent = data.margin_left;
+                if (data.margin_right !== undefined) marginRightPercent = data.margin_right;
+                if (data.margin_lines_enabled !== undefined) marginLinesEnabled = data.margin_lines_enabled;
             }
         } catch (e) {
             console.error('Greška pri učitavanju iz Firestore:', e);
@@ -106,6 +109,29 @@
     function changeWidth(delta) {
         readerWidthPercent = Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, readerWidthPercent + delta));
         saveSettingToFirebase('reader_sirina', readerWidthPercent);
+    }
+
+    // --- Vodilice (margine) - tanke uspravne linije, grubo pomjerljive ---
+    let marginLinesEnabled = $state(false);
+    let marginLeftPercent = $state(10);
+    let marginRightPercent = $state(10);
+    const MARGIN_MIN = 0;
+    const MARGIN_MAX = 40;
+    const MARGIN_STEP = 2;
+
+    function toggleMarginLines() {
+        marginLinesEnabled = !marginLinesEnabled;
+        saveSettingToFirebase('margin_lines_enabled', marginLinesEnabled);
+    }
+
+    function changeMarginLeft(delta) {
+        marginLeftPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginLeftPercent + delta));
+        saveSettingToFirebase('margin_left', marginLeftPercent);
+    }
+
+    function changeMarginRight(delta) {
+        marginRightPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginRightPercent + delta));
+        saveSettingToFirebase('margin_right', marginRightPercent);
     }
 
     // --- Tekst / rijeci (trenutna PDF stranica) ---
@@ -667,7 +693,7 @@
     }
 </script>
 
-<div class="container-fluid reader-page">
+<div class="container ">
 
     <!-- 1. TOOLBAR -->
     <div class="card mb-3">
@@ -682,7 +708,7 @@
                     />
                 </div>
 
-                <div class="toolbar-group d-flex align-items-center gap-2">
+                <div class="toolbar-group d-flex align-items-center gap-2 r">
                     <span class="fw-bold small">Font</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(-1)}>A-</button>
@@ -698,6 +724,38 @@
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(-WIDTH_STEP)}>−</button>
                         <span class="btn btn-light disabled">{readerWidthPercent}%</span>
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}>+</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <div class="form-check form-switch mb-0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="marginLinesToggle"
+                            checked={marginLinesEnabled}
+                            onchange={toggleMarginLines}
+                        />
+                        <label class="form-check-label small" for="marginLinesToggle">Margine</label>
+                    </div>
+                </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <span class="fw-bold small">Margina L</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled">{marginLeftPercent}%</span>
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
+                    </div>
+                </div>
+
+                <div class="toolbar-group d-flex align-items-center gap-2">
+                    <span class="fw-bold small">Margina D</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled">{marginRightPercent}%</span>
+                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
 
@@ -881,21 +939,27 @@
         </div>
     {/if}
 
-    <div
-        bind:this={readerContentEl}
-        class="reader-content border rounded p-3 mb-3"
-        style="font-size: {fontSize}px; width: {readerWidthPercent}%; margin: 0 auto;"
-    >
-        {#each words as word, i}
-            <span
-                class="word"
-                class:pos-mark={posIndex === i}
-                class:start-mark={startIndex === i}
-                class:end-mark={endIndex === i}
-                class:pace-mark={isInPaceChunk(i)}
-                onclick={() => wordClick(i)}>{word}</span
-            >{' '}
-        {/each}
+    <div class="reader-content-wrap" style="width: {readerWidthPercent}%; margin: 0 auto;">
+        {#if marginLinesEnabled}
+            <div class="margin-line" style="left: {marginLeftPercent}%;"></div>
+            <div class="margin-line" style="right: {marginRightPercent}%;"></div>
+        {/if}
+        <div
+            bind:this={readerContentEl}
+            class="reader-content border rounded p-3 mb-3"
+            style="font-size: {fontSize}px;"
+        >
+            {#each words as word, i}
+                <span
+                    class="word"
+                    class:pos-mark={posIndex === i}
+                    class:start-mark={startIndex === i}
+                    class:end-mark={endIndex === i}
+                    class:pace-mark={isInPaceChunk(i)}
+                    onclick={() => wordClick(i)}>{word}</span
+                >{' '}
+            {/each}
+        </div>
     </div>
 
     {#if currentFileName}
@@ -939,13 +1003,26 @@
 
 <style>
     .reader-page { max-width: 1100px; }
+    .reader-content-wrap {
+        position: relative;
+    }
+    .margin-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #6068e0d5;
+        opacity: 0.6;
+        pointer-events: none;
+        z-index: 2;
+    }
     .reader-content { font-family: 'Lexend', sans-serif; line-height: 1.6; white-space: normal; }
     .word { cursor: pointer; }
     .word:hover { background: #eee; }
     .pos-mark { background: #ffe066; border-radius: 2px; }
     .start-mark { background: #a5d8ff; border-radius: 2px; }
     .end-mark { background: #b2f2bb; border-radius: 2px; }
-    .pace-mark { background: #c3fae8; border-radius: 2px; }
+    .pace-mark { background: var(--pace-mark-color, #ffa8a8); border-radius: 2px; }
     .info { font-size: 15px; color: #333; }
     .search-results { max-height: 250px; overflow-y: auto; }
     .search-result-item { padding: 4px 2px; cursor: pointer; border-bottom: 1px solid #eee; }
