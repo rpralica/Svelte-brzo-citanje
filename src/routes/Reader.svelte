@@ -14,13 +14,16 @@
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
 
-    onMount(() => {
+  onMount(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user) {
                 await loadUserSettings();
             }
         });
+
+        // Slušalica za Escape taster
+        window.addEventListener('keydown', handleGlobalKeydown);
 
         // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
         const handleVisibilityChange = () => {
@@ -33,10 +36,21 @@
 
         return () => {
             unsubscribe();
+            window.removeEventListener('keydown', handleGlobalKeydown);
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('beforeunload', savePositionQuietly);
         };
     });
+
+    // --- Globalni listener za Esc taster (pauza sesije) ---
+    function handleGlobalKeydown(e) {
+        if (e.key === 'Escape') {
+            // Ako je sesija aktivna (pacer ili race), a već nije pauzirana -> pauziraj je
+            if ((paceActive || raceActive) && !isPaused) {
+                pauseSession();
+            }
+        }
+    }
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
@@ -1087,8 +1101,8 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 2px;
-        background: #976bff;
+        width: 1.7px;
+        background: #46b2e0;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
