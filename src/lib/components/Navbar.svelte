@@ -62,7 +62,7 @@
 		<!-- Središnji linkovi -->
 		<div class="nav-links" class:active-menu={isOpen}>
 			<a href="/" class:active={isActive('/')} onclick={closeMenu}>Čitanje</a>
-			<a href="/tools" class:active={isActive('/tools')} onclick={closeMenu}>Dodaci</a>
+			<a href="/dodaci" class:active={isActive('/dodaci')} onclick={closeMenu}>Dodaci</a>
 			<a href="/test" class:active={isActive('/test')} onclick={closeMenu}>Test</a>
 		</div>
 
