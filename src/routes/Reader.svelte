@@ -1087,8 +1087,8 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 1px;
-        background: #ff6b6b;
+        width: 2px;
+        background: #976bff;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
@@ -1099,7 +1099,7 @@
     .pos-mark { background: #ffe066; border-radius: 2px; }
     .start-mark { background: #a5d8ff; border-radius: 2px; }
     .end-mark { background: #b2f2bb; border-radius: 2px; }
-    .pace-mark { background: var(--pace-mark-color, #ffa8a8); border-radius: 2px; }
+    .pace-mark { background: var(--pace-mark-color, #a8d4ff); border-radius: 2px; }
     .info { font-size: 15px; color: #333; }
     .search-results { max-height: 250px; overflow-y: auto; }
     .search-result-item { padding: 4px 2px; cursor: pointer; border-bottom: 1px solid #eee; }
