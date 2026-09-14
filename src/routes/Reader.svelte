@@ -1,9 +1,8 @@
 <script>
 /* global Swal*/
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
-       
         onAuthStateChanged 
     } from 'firebase/auth';
     import { 
@@ -22,12 +21,22 @@
                 await loadUserSettings();
             }
         });
-        return unsubscribe;
+
+        // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                savePositionQuietly();
+            }
+        };
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('beforeunload', savePositionQuietly);
+
+        return () => {
+            unsubscribe();
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', savePositionQuietly);
+        };
     });
-
-    
-
-    
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
@@ -96,7 +105,7 @@
         saveSettingToFirebase('reader_sirina', readerWidthPercent);
     }
 
-    // --- Vodilice (margine) - tanke uspravne linije, grubo pomjerljive ---
+    // --- Vodilice (margine) ---
     let marginLinesEnabled = $state(false);
     let marginLeftPercent = $state(10);
     let marginRightPercent = $state(10);
@@ -133,6 +142,9 @@
     let pdfDoc = null; 
     let currentPage = $state(1);
     let totalPages = $state(1);
+
+    // --- Ukupan broj rijeci u cijelom dokumentu ---
+    let totalWordsInDoc = $state(0);
 
     // --- Markeri i pozicija ---
     let posIndex = $state(null); 
@@ -178,6 +190,23 @@
     }
 
     let previousPositionLabel = $state('');
+
+    // Tiho čuvanje pozicije u pozadini (za auto-save pri izlasku)
+    async function savePositionQuietly() {
+        if (!currentUser || !currentFileName) return;
+        try {
+            const safeKey = sanitizeKey(currentFileName);
+            const userRef = doc(db, 'users', currentUser.uid);
+            const snap = await getDoc(userRef);
+            const data = snap.exists() ? snap.data() : {};
+            const existingPages = data.pdf_stranice || {};
+            
+            existingPages[safeKey] = currentPage;
+            await setDoc(userRef, { pdf_stranice: existingPages }, { merge: true });
+        } catch (e) {
+            console.error('Greška pri automatskom čuvanju pozicije:', e);
+        }
+    }
 
     async function savePosition() {
         if (!currentUser || !currentFileName) {
@@ -241,6 +270,7 @@
 
         const saved = snap.data().pdf_stranice[safeKey];
         await renderPdfPage(parseInt(saved, 10));
+        infoMessage = '';
     }
 
     // --- Učitavanje .pdf ---
@@ -274,11 +304,14 @@
         searchReady = false;
         searchResults = [];
         searchQuery = '';
+        totalWordsInDoc = 0;
         raceActive = false;
         raceStats = [];
         raceCheckpoints = [];
         stopPacer();
         isPaused = false;
+
+        let targetPage = 1;
 
         if (currentUser) {
             const safeKey = sanitizeKey(currentFileName);
@@ -286,18 +319,20 @@
             const snap = await getDoc(userRef);
             if (snap.exists() && snap.data().pdf_stranice && snap.data().pdf_stranice[safeKey]) {
                 const saved = snap.data().pdf_stranice[safeKey];
-                infoMessage = 'Nađena sačuvana stranica (' + saved + "). Klikni 'Idi na sačuvanu poziciju'.";
+                targetPage = parseInt(saved, 10);
+                infoMessage = `Nađena sačuvana stranica (${saved}). Automatski nastavljamo odatle!`;
             } else {
                 infoMessage = '';
             }
         }
 
-        await renderPdfPage(currentPage);
+        await renderPdfPage(targetPage);
 
         preparingSearch = true;
         extractAllPages().then(() => {
             preparingSearch = false;
             searchReady = true;
+            totalWordsInDoc = pagesWordsCache.reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
         });
     }
 
@@ -331,6 +366,9 @@
         posIndex = null;
         startIndex = null;
         endIndex = null;
+
+        // Auto-save pozicije pri svakom okretanju stranice
+        savePositionQuietly();
     }
 
     // --- Race ---
@@ -350,8 +388,7 @@
         isPaused = false;
     }
 
-    // --- Provjere brzine na 1, 5 i 10 minuta (kumulativni WPM od pocetka trke) ---
-    let raceCheckpoints = $state([]); // { atMinutes, wpm, words, seconds }
+    let raceCheckpoints = $state([]); 
     const CHECKPOINT_THRESHOLDS = [
         { atMinutes: 1, seconds: 60 },
         { atMinutes: 5, seconds: 300 },
@@ -389,8 +426,6 @@
     }
 
     function stopRace() {
-        // Ako PDF ima samo jednu stranicu, nema "Sljedeca" koja bi zabiljezila
-        // citanje - zato Stop Race ovdje racuna tu jedinu stranicu kao zavrsenu.
         if (raceActive && totalPages === 1 && raceStats.length === 0) {
             recordPageIfRacing();
         }
@@ -402,10 +437,10 @@
         }
     }
 
-    // --- Pacer - highlight koji se sam pomjera zadatim tempom (WPM), u grupama rijeci ---
+    // --- Pacer ---
     let paceWpm = $state(300);
-    let paceChunkSize = $state(3); // koliko rijeci se highlight-uje odjednom
-    let paceActive = $state(false); // pacer ukljucen za trenutnu sesiju
+    let paceChunkSize = $state(3); 
+    let paceActive = $state(false); 
     let paceIndex = $state(0);
     let paceIntervalId = null;
 
@@ -447,7 +482,7 @@
     }
 
     $effect(() => {
-        paceIndex; // prati promjenu
+        paceIndex; 
         if (paceActive) {
             scrollPaceIntoViewIfNeeded();
         }
@@ -492,7 +527,7 @@
         paceIndex = 0;
     }
 
-    // --- Jedinstvena Pauza/Nastavi za Race I Pacer zajedno ---
+    // --- Pauza/Nastavi ---
     let isPaused = $state(false);
     let racePausedAt = 0;
 
@@ -551,7 +586,6 @@
         }
     }
 
-    // --- Idi direktno na stranicu ---
     let goToPageInput = $state(1);
 
     function goToPage() {
@@ -567,7 +601,7 @@
             Swal.fire('Info', 'Klikni "Nastavi" prije skoka na drugu stranicu.', 'info');
             return;
         }
-        if (raceActive) raceLastTime = Date.now(); // skok se ne racuna kao zavrsena stranica
+        if (raceActive) raceLastTime = Date.now(); 
 
         renderPdfPage(target).then(() => {
             scrollToReaderTop();
@@ -643,7 +677,6 @@
     let pastedWordCount = $derived(splitToWords(pastedText).length);
     let selectedWordCount = $state(0);
 
-    // --- Start/Stop mjerenje WPM za zalijepljeni tekst ---
     let taRaceActive = $state(false);
     let taStartTime = 0;
 
@@ -676,8 +709,8 @@
         });
     }
 
-    // --- Vracanje na paste-text prikaz bez refresh-a stranice ---
     function closePdf() {
+        savePositionQuietly();
         currentFileName = '';
         words = [];
         pdfDoc = null;
@@ -687,6 +720,7 @@
         searchReady = false;
         searchResults = [];
         searchQuery = '';
+        totalWordsInDoc = 0;
         raceActive = false;
         raceStats = [];
         stopPacer();
@@ -834,6 +868,14 @@
         <div class="card mb-3">
             <div class="card-body py-2">
                 <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                    <span class="info">
+                        Ukupno riječi:
+                        {#if preparingSearch}
+                            <span class="text-muted">(računa se...)</span>
+                        {:else}
+                            <strong>{totalWordsInDoc}</strong>
+                        {/if}
+                    </span>
                     <span class="info">{wordCountLabel}</span>
                     <span class="info">Stranica: {currentPage} / {totalPages}</span>
                 </div>

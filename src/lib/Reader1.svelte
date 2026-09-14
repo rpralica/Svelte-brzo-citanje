@@ -1,10 +1,8 @@
 <script>
-    import { onMount } from 'svelte';
+/* global Swal*/
+    import { onMount, onDestroy } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
-        signInWithPopup, 
-        GoogleAuthProvider, 
-        signOut, 
         onAuthStateChanged 
     } from 'firebase/auth';
     import { 
@@ -23,26 +21,22 @@
                 await loadUserSettings();
             }
         });
-        return unsubscribe;
+
+        // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                savePositionQuietly();
+            }
+        };
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('beforeunload', savePositionQuietly);
+
+        return () => {
+            unsubscribe();
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', savePositionQuietly);
+        };
     });
-
-    async function loginWithGoogle() {
-        const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-            Swal.fire({ title: 'Uspješan login!', icon: 'success', timer: 1000, showConfirmButton: false });
-        } catch (error) {
-            Swal.fire('Greška', error.message, 'error');
-        }
-    }
-
-    async function logout() {
-        await signOut(auth);
-        currentUser = null;
-        currentFileName = '';
-        words = [];
-        Swal.fire({ title: 'Odjavljeni ste', icon: 'info', timer: 1000, showConfirmButton: false });
-    }
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
@@ -111,7 +105,7 @@
         saveSettingToFirebase('reader_sirina', readerWidthPercent);
     }
 
-    // --- Vodilice (margine) - tanke uspravne linije, grubo pomjerljive ---
+    // --- Vodilice (margine) ---
     let marginLinesEnabled = $state(false);
     let marginLeftPercent = $state(10);
     let marginRightPercent = $state(10);
@@ -194,6 +188,23 @@
 
     let previousPositionLabel = $state('');
 
+    // Tiho čuvanje pozicije u pozadini (za auto-save pri izlasku)
+    async function savePositionQuietly() {
+        if (!currentUser || !currentFileName) return;
+        try {
+            const safeKey = sanitizeKey(currentFileName);
+            const userRef = doc(db, 'users', currentUser.uid);
+            const snap = await getDoc(userRef);
+            const data = snap.exists() ? snap.data() : {};
+            const existingPages = data.pdf_stranice || {};
+            
+            existingPages[safeKey] = currentPage;
+            await setDoc(userRef, { pdf_stranice: existingPages }, { merge: true });
+        } catch (e) {
+            console.error('Greška pri automatskom čuvanju pozicije:', e);
+        }
+    }
+
     async function savePosition() {
         if (!currentUser || !currentFileName) {
             Swal.fire('Greška', 'Morate biti prijavljeni i učitati PDF fajl.', 'warning');
@@ -256,6 +267,7 @@
 
         const saved = snap.data().pdf_stranice[safeKey];
         await renderPdfPage(parseInt(saved, 10));
+        infoMessage = '';
     }
 
     // --- Učitavanje .pdf ---
@@ -291,8 +303,11 @@
         searchQuery = '';
         raceActive = false;
         raceStats = [];
+        raceCheckpoints = [];
         stopPacer();
         isPaused = false;
+
+        let targetPage = 1;
 
         if (currentUser) {
             const safeKey = sanitizeKey(currentFileName);
@@ -300,13 +315,14 @@
             const snap = await getDoc(userRef);
             if (snap.exists() && snap.data().pdf_stranice && snap.data().pdf_stranice[safeKey]) {
                 const saved = snap.data().pdf_stranice[safeKey];
-                infoMessage = 'Nađena sačuvana stranica (' + saved + "). Klikni 'Idi na sačuvanu poziciju'.";
+                targetPage = parseInt(saved, 10);
+                infoMessage = `Nađena sačuvana stranica (${saved}). Automatski nastavljamo odatle!`;
             } else {
                 infoMessage = '';
             }
         }
 
-        await renderPdfPage(currentPage);
+        await renderPdfPage(targetPage);
 
         preparingSearch = true;
         extractAllPages().then(() => {
@@ -345,6 +361,9 @@
         posIndex = null;
         startIndex = null;
         endIndex = null;
+
+        // Auto-save pozicije pri svakom okretanju stranice
+        savePositionQuietly();
     }
 
     // --- Race ---
@@ -359,9 +378,23 @@
         }
         raceActive = true;
         raceStats = [];
+        raceCheckpoints = [];
         raceLastTime = Date.now();
         isPaused = false;
     }
+
+    let raceCheckpoints = $state([]); 
+    const CHECKPOINT_THRESHOLDS = [
+        { atMinutes: 1, seconds: 60 },
+        { atMinutes: 5, seconds: 300 },
+        { atMinutes: 10, seconds: 600 }
+    ];
+
+    let raceCheckpointAverage = $derived.by(() => {
+        if (raceCheckpoints.length === 0) return 0;
+        const sum = raceCheckpoints.reduce((s, c) => s + c.wpm, 0);
+        return Math.round(sum / raceCheckpoints.length);
+    });
 
     function recordPageIfRacing() {
         if (!raceActive) return;
@@ -372,11 +405,22 @@
         const wpm = minutes > 0 ? Math.round(wordsOnPage / minutes) : 0;
         raceStats = [...raceStats, { page: currentPage, words: wordsOnPage, seconds, wpm }];
         raceLastTime = now;
+
+        const cumWords = raceStats.reduce((s, x) => s + x.words, 0);
+        const cumSeconds = raceStats.reduce((s, x) => s + x.seconds, 0);
+        for (const t of CHECKPOINT_THRESHOLDS) {
+            const already = raceCheckpoints.some((c) => c.atMinutes === t.atMinutes);
+            if (!already && cumSeconds >= t.seconds) {
+                const cumWpm = Math.round(cumWords / (cumSeconds / 60));
+                raceCheckpoints = [
+                    ...raceCheckpoints,
+                    { atMinutes: t.atMinutes, wpm: cumWpm, words: cumWords, seconds: cumSeconds }
+                ];
+            }
+        }
     }
 
     function stopRace() {
-        // Ako PDF ima samo jednu stranicu, nema "Sljedeca" koja bi zabiljezila
-        // citanje - zato Stop Race ovdje racuna tu jedinu stranicu kao zavrsenu.
         if (raceActive && totalPages === 1 && raceStats.length === 0) {
             recordPageIfRacing();
         }
@@ -388,10 +432,10 @@
         }
     }
 
-    // --- Pacer - highlight koji se sam pomjera zadatim tempom (WPM), u grupama rijeci ---
+    // --- Pacer ---
     let paceWpm = $state(300);
-    let paceChunkSize = $state(3); // koliko rijeci se highlight-uje odjednom
-    let paceActive = $state(false); // pacer ukljucen za trenutnu sesiju
+    let paceChunkSize = $state(3); 
+    let paceActive = $state(false); 
     let paceIndex = $state(0);
     let paceIntervalId = null;
 
@@ -433,7 +477,7 @@
     }
 
     $effect(() => {
-        paceIndex; // prati promjenu
+        paceIndex; 
         if (paceActive) {
             scrollPaceIntoViewIfNeeded();
         }
@@ -478,7 +522,7 @@
         paceIndex = 0;
     }
 
-    // --- Jedinstvena Pauza/Nastavi za Race I Pacer zajedno ---
+    // --- Pauza/Nastavi ---
     let isPaused = $state(false);
     let racePausedAt = 0;
 
@@ -537,7 +581,6 @@
         }
     }
 
-    // --- Idi direktno na stranicu ---
     let goToPageInput = $state(1);
 
     function goToPage() {
@@ -553,7 +596,7 @@
             Swal.fire('Info', 'Klikni "Nastavi" prije skoka na drugu stranicu.', 'info');
             return;
         }
-        if (raceActive) raceLastTime = Date.now(); // skok se ne racuna kao zavrsena stranica
+        if (raceActive) raceLastTime = Date.now(); 
 
         renderPdfPage(target).then(() => {
             scrollToReaderTop();
@@ -629,7 +672,6 @@
     let pastedWordCount = $derived(splitToWords(pastedText).length);
     let selectedWordCount = $state(0);
 
-    // --- Start/Stop mjerenje WPM za zalijepljeni tekst ---
     let taRaceActive = $state(false);
     let taStartTime = 0;
 
@@ -662,8 +704,8 @@
         });
     }
 
-    // --- Vracanje na paste-text prikaz bez refresh-a stranice ---
     function closePdf() {
+        savePositionQuietly();
         currentFileName = '';
         words = [];
         pdfDoc = null;
@@ -693,28 +735,41 @@
     }
 </script>
 
-<div class="container ">
+
+
+
+<div class="container-fluid ">
 
     <!-- 1. TOOLBAR -->
-    <div class="card mb-3">
-        <div class="card-body py-2">
-            <div class="d-flex flex-wrap align-items-center gap-4">
-                <div class="toolbar-group">
-                    <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        class="form-control form-control-sm"
-                        onchange={onFileSelected}
-                    />
-                </div>
+   <div class="card mb-3 w-100">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            
+            <!-- Fajl input i Zatvori PDF (grupisano da stoji logično) -->
+            <div class="d-flex align-items-center flex-grow-1 gap-2" style="min-width: 250px;">
+                <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    class="form-control form-control-sm flex-grow-1"
+                    onchange={onFileSelected}
+                />
+                {#if currentFileName}
+                    <button class="btn btn-outline-danger btn-sm text-nowrap" type="button" onclick={closePdf}>
+                        ✕ Zatvori
+                    </button>
+                {/if}
+            </div>
 
-                <div class="toolbar-group d-flex align-items-center gap-2 r">
+            <!-- Kontrole za Font, Širinu i Margine -->
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                
+                <div class="toolbar-group d-flex align-items-center gap-2">
                     <span class="fw-bold small">Font</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(-1)}>A-</button>
-                        <span class="btn btn-light disabled">{fontSize}</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeFont(1)}>A+</button>
-                        <button class="btn btn-outline-secondary" type="button" onclick={resetFont}>Reset</button>
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}>A-</button>
+                        <span class="btn btn-light disabled px-2">{fontSize}</span>
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}>A+</button>
+                        <button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
                     </div>
                 </div>
 
@@ -722,7 +777,7 @@
                     <span class="fw-bold small">Širina</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(-WIDTH_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{readerWidthPercent}%</span>
+                        <span class="btn btn-light disabled px-2">{readerWidthPercent}%</span>
                         <button class="btn btn-outline-info" type="button" onclick={() => changeWidth(WIDTH_STEP)}>+</button>
                     </div>
                 </div>
@@ -742,33 +797,28 @@
                 </div>
 
                 <div class="toolbar-group d-flex align-items-center gap-2">
-                    <span class="fw-bold small">Margina L</span>
+                    <span class="fw-bold small">Lijeva</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{marginLeftPercent}%</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled px-2">{marginLeftPercent}%</span>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
 
                 <div class="toolbar-group d-flex align-items-center gap-2">
-                    <span class="fw-bold small">Margina D</span>
+                    <span class="fw-bold small">Desna</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
-                        <span class="btn btn-light disabled">{marginRightPercent}%</span>
-                        <button class="btn btn-outline-secondary" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button>
+                        <span class="btn btn-light disabled px-2">{marginRightPercent}%</span>
+                        <button class="btn btn-outline-danger" type="button" onclick={() => changeMarginRight(MARGIN_STEP)}>+</button>
                     </div>
                 </div>
 
-                {#if currentFileName}
-                    <div class="toolbar-group">
-                        <button class="btn btn-outline-dark btn-sm" type="button" onclick={closePdf}
-                            >✕ Zatvori PDF (novi tekst)</button
-                        >
-                    </div>
-                {/if}
             </div>
+
         </div>
     </div>
+</div>
 
     {#if infoMessage}
         <div class="alert alert-info py-1 px-2">{infoMessage}</div>
@@ -900,6 +950,19 @@
                         {/if}
                     </div>
                 {/if}
+
+                {#if raceCheckpoints.length > 0}
+                    <div class="race-checkpoints mt-2">
+                        <div class="info fw-bold">Provjere (kumulativno):</div>
+                        {#each raceCheckpoints as c}
+                            <div class="info">{c.atMinutes}. min: <strong>{c.wpm} wpm</strong></div>
+                        {/each}
+                        <hr class="my-1" />
+                        <div class="info text-info fw-bold">
+                            Prosjek provjera:<strong class="text-danger"> {raceCheckpointAverage}</strong>
+                        </div>
+                    </div>
+                {/if}
             </div>
         </div>
 
@@ -1010,8 +1073,8 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 2px;
-        background: #6068e0d5;
+        width: 1px;
+        background: #ff6b6b;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
