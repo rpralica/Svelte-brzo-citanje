@@ -11,6 +11,7 @@
 
     let displayTime = $state(300); // Vrijeme prikaza u ms
     let wordsCount = $state(1);    // Broj riječi/brojeva u jednom bljesku (1 do 5)
+    let progressiveMode = $state(false); // Da li je aktivno progresivno ubrzavanje
 
     let sequenceArray = $state([]);
     let currentIndex = $state(0);
@@ -63,7 +64,6 @@
 
         if (baseItems.length === 0) baseItems = ['test', '123', 'abc', '789'];
 
-        // Ako je izabrano da se prikazuje više riječi odjednom, pakujemo ih u grupe (blokove)
         let groupedItems = [];
         if (wordsCount <= 1) {
             return baseItems;
@@ -71,14 +71,14 @@
 
         for (let i = 0; i < baseItems.length; i += wordsCount) {
             let chunk = baseItems.slice(i, i + wordsCount);
-            // Spajamo ih razmakom u jednu metu
             groupedItems.push(chunk.join(' '));
         }
 
         return groupedItems.length > 0 ? groupedItems : baseItems;
     }
 
-    function startTachistoscope() {
+    function startTachistoscope(isProgressive) {
+        progressiveMode = isProgressive;
         sequenceArray = generateSequence();
         if (sequenceArray.length === 0) return;
 
@@ -125,20 +125,27 @@
         const cleanTarget = targetItem.toString().trim().toLowerCase();
         const cleanInput = userInput.toString().trim().toLowerCase();
 
+        let isCorrect = (cleanInput === cleanTarget);
+
         if (!isRepeating) {
             totalAttempts++;
-            if (cleanInput === cleanTarget) {
+            if (isCorrect) {
                 correctAttempts++;
                 feedbackResult = 'correct';
             } else {
                 feedbackResult = 'incorrect';
             }
         } else {
-            if (cleanInput === cleanTarget) {
+            if (isCorrect) {
                 feedbackResult = 'correct';
             } else {
                 feedbackResult = 'incorrect';
             }
+        }
+
+        // Progresivni mod: ako je tačno i uključen je progresivni start, ubrzavamo za 5ms (min 50ms)
+        if (isCorrect && progressiveMode) {
+            displayTime = Math.max(50, displayTime - 10);
         }
 
         waitingForInput = false;
@@ -192,8 +199,8 @@
 <h1 class="text-center mb-3">Tachistoscope</h1>
 
 <div class="tachistoscope-wrap p-3 border rounded bg-light">
-    <!-- Izbor moda -->
-    {#if !isRunning && !sessionFinished}
+    <!-- Izbor moda, podešavanja (prikazuje se kad igra ne traje) -->
+    {#if !isRunning}
         <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded">
             <div class="form-check">
                 <input
@@ -260,7 +267,7 @@
             <input
                 type="range"
                 class="form-range"
-                min="100"
+                min="50"
                 max="600"
                 step="25"
                 bind:value={displayTime}
@@ -281,9 +288,9 @@
                 bind:value={wordsCount}
             />
         </div>
-    {:else if isRunning}
+    {:else}
         <div class="alert alert-secondary py-2 text-center small mb-3">
-            Vježba u toku... Režim: <strong>{mode.toUpperCase()}</strong> | Brzina:
+            Vježba u toku ({progressiveMode ? '⚡ Progresivno' : '🚀 Normalno'}). Režim: <strong>{mode.toUpperCase()}</strong> | Brzina:
             <strong>{displayTime}ms</strong> | Riječi po prikazu: <strong>{wordsCount}</strong> | Blok: {currentIndex + 1} / {sequenceArray.length}
         </div>
     {/if}
@@ -355,11 +362,14 @@
         </button>
     </div>
 
-    <!-- Kontrole -->
+    <!-- Kontrole: Dva dugmeta za start (Normalni i Progresivni) ili Stop -->
     <div class="d-flex gap-2 justify-content-center">
         {#if !isRunning}
-            <button class="btn btn-primary w-100" onclick={startTachistoscope}>
-                {sessionFinished ? 'Pokreni ponovo' : 'Start Vježbe'}
+            <button class="btn btn-primary flex-fill" onclick={() => startTachistoscope(false)}>
+                {sessionFinished ? '🚀 Nova igra (Normalno) ' : '🚀 Start (Normalno)'}
+            </button>
+            <button class="btn btn-warning flex-fill fw-bold text-dark" onclick={() => startTachistoscope(true)}>
+                {sessionFinished ? '⚡ Nova igra (Progresivno) ' : '⚡ Start (Progresivno)'}
             </button>
         {:else}
             <button class="btn btn-danger w-100" onclick={stopTachistoscope}>Završi Vježbu</button>
