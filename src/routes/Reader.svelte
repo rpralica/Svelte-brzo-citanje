@@ -723,8 +723,11 @@
         });
     }
 
-    function closePdf() {
-        savePositionQuietly();
+   async function closePdf() {
+        // Prvo sačuvaj poziciju dok ime fajla još postoji
+        await savePositionQuietly();
+
+        // Tek onda resetuj stanje na početne vrijednosti
         currentFileName = '';
         words = [];
         pdfDoc = null;
