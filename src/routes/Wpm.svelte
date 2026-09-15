@@ -1,6 +1,6 @@
 <script>
     // --- Izvori (State) ---
-    let rijeci = $state(30000);
+    let rijeci = $state(0);
     let wpm = $state(300);
 
     // --- Izvedene vrijednosti (Derived) ---
@@ -70,6 +70,8 @@
                     bind:value={rijeci}
                     oninput={rijeciCh}
                     onchange={rijeciCh}
+                    min="10"
+                    step="100"
                     type="number"
                     class="form-control w-50 mb-2 fw-bold"
                 />
@@ -77,6 +79,7 @@
                     value={min}
                     oninput={minCh}
                     onchange={minCh}
+                    min="1"
                     type="number"
                     class="form-control w-50 fw-bold"
                 />
@@ -84,6 +87,7 @@
                     value={sek}
                     oninput={sekCh}
                     onchange={sekCh}
+                    min="1"
                     type="number"
                     class="form-control w-50 mt-2 fw-bold"
                 />
@@ -92,6 +96,8 @@
                     oninput={wpmCh}
                     onchange={wpmCh}
                     type="number"
+                    min="10"
+                    step="10"
                     class="form-control w-50 fw-bold mt-2"
                 />
 
