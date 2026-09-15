@@ -1,4 +1,5 @@
 <script>
+/* global Swal */
     // --- Tri kratka teksta (~200 rijeci) za Brzi test ---
     const SHORT_TEXTS = [
 `Vlak je kasnio već dvadeset minuta kad je Amir konačno ugledao svjetla stanice. Sjedio je sam u posljednjem vagonu, gledajući kroz prozor u maglu koja se dizala iznad polja. Kondukter je prošao pored njega treći put te noći, provjeravajući karte putnika kojih je bilo sve manje.
@@ -137,7 +138,7 @@ Amela se nasmiješila, podižući svoju šoljicu kafe u malu zdravicu. "Za tride
 Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obasjavalo ulice koje je štitio toliko dugo. Bila je to dobra karijera, pomislio je. Dobar život, posvećen zaštiti drugih. I dok je posljednja smjena završavala, osjećao je mir znajući da ostavlja grad u sposobnim rukama mlade detektivke pored sebe.`
     ];
 
-    let testType = $state(null); // 'brzi' | 'kompletni'
+    let testType = $state('brzi'); // 'brzi' | 'kompletni'
     let testText = $state('');
     let testActive = $state(false);
     let testStartTime = 0;
@@ -281,7 +282,7 @@ Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obas
 
             <!-- Dugme za ravnanje (Justify) -->
             <button 
-                class="btn btn-sm {isJustified ? 'btn-dark' : 'btn-outline-light text-dark'}" 
+                class="btn btn-sm {isJustified ? 'btn-warning' : 'btn-danger text-light'}" 
                 type="button" 
                 onclick={toggleJustify}
                 title="Uključi/isključi obostrano poravnanje teksta">
@@ -302,7 +303,7 @@ Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obas
         <!-- Textarea sa dinamičkim fontom i opcionalnim justify ravnanjem -->
         <textarea
             class="form-control mb-3 custom-textarea" 
-            rows="20"
+            rows="14"
             style="font-size: {fontSize}px; text-align: {isJustified ? 'justify' : 'left'};"
             placeholder="Generisi tekst, učitaj .txt fajl sa računara, ili nalijepi svoj tekst ovdje..."
             bind:value={testText}
