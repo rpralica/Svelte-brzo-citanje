@@ -1,5 +1,5 @@
 <script>
-    // --- TACHISTOSCOPE (RANDOM / CUSTOM / NUMBERS / MIX) ---
+    /* global Swal */
     let mode = $state('text'); // 'text' | 'numbers' | 'mix'
 
     let defaultWords =
@@ -10,27 +10,29 @@
     let customNumbersInput = $state(defaultNumbers);
 
     let displayTime = $state(300); // Vrijeme prikaza u ms
-    let wordsCount = $state(1);    // Broj riječi/brojeva u jednom bljesku (1 do 5)
-    let progressiveMode = $state(false); // Da li je aktivno progresivno ubrzavanje
+    let wordsCount = $state(1);    // Broj riječi/brojeva u jednom bljesku
+    let progressiveMode = $state(false); // Progresivno ubrzavanje
+    let randomWait = $state(false);      // Random pauza prije pojave riječi
 
     let sequenceArray = $state([]);
     let currentIndex = $state(0);
     let currentItem = $state('');
     let targetItem = '';
     let isRunning = $state(false);
+    let isPractice = $state(false); // Da li je pokrenut Practice mod
 
     let userInput = $state('');
     let waitingForInput = $state(false);
     let feedbackResult = $state(null); // 'correct' | 'incorrect' | null
     let inputElement = $state(null);
 
-    // Statistika i ponavljanje
+    // Statistika (samo za takmičarski mod)
     let totalAttempts = $state(0);
     let correctAttempts = $state(0);
     let sessionFinished = $state(false);
-    let isRepeating = $state(false);
 
     let timerId = null;
+    let waitTimerId = null;
 
     function shuffleArray(arr) {
         const a = arr.slice();
@@ -50,14 +52,8 @@
             let raw = customNumbersInput.trim().split(/[\s,]+/);
             baseItems = shuffleArray(raw).filter(Boolean);
         } else if (mode === 'mix') {
-            let w = customWordsInput
-                .trim()
-                .split(/[\s,]+/)
-                .filter(Boolean);
-            let n = customNumbersInput
-                .trim()
-                .split(/[\s,]+/)
-                .filter(Boolean);
+            let w = customWordsInput.trim().split(/[\s,]+/).filter(Boolean);
+            let n = customNumbersInput.trim().split(/[\s,]+/).filter(Boolean);
             let combined = [...w, ...n];
             baseItems = shuffleArray(combined);
         }
@@ -77,8 +73,9 @@
         return groupedItems.length > 0 ? groupedItems : baseItems;
     }
 
-    function startTachistoscope(isProgressive) {
-        progressiveMode = isProgressive;
+    // Pokretanje Takmičarskog moda
+    function startTachistoscope() {
+        isPractice = false;
         sequenceArray = generateSequence();
         if (sequenceArray.length === 0) return;
 
@@ -88,10 +85,23 @@
         correctAttempts = 0;
         currentIndex = 0;
         feedbackResult = null;
-        isRepeating = false;
         nextFlash();
     }
 
+    // Pokretanje Practice moda
+    function startPracticeMode() {
+        isPractice = true;
+        sequenceArray = generateSequence();
+        if (sequenceArray.length === 0) return;
+
+        isRunning = true;
+        sessionFinished = false;
+        currentIndex = 0;
+        feedbackResult = null;
+        nextFlash();
+    }
+
+    // Glavna logika za flešovanje
     function nextFlash() {
         if (currentIndex >= sequenceArray.length) {
             isRunning = false;
@@ -104,52 +114,60 @@
         feedbackResult = null;
         userInput = '';
         waitingForInput = false;
-        isRepeating = false;
+        currentItem = '';
 
-        targetItem = sequenceArray[currentIndex];
-        currentItem = targetItem;
+        let delayBeforeShow = 0;
+        if (randomWait) {
+            delayBeforeShow = Math.floor(Math.random() * 1100) + 400;
+        }
 
-        timerId = setTimeout(() => {
-            currentItem = '';
-            waitingForInput = true;
+        waitTimerId = setTimeout(() => {
+            if (!isRunning) return;
+            
+            targetItem = sequenceArray[currentIndex];
+            currentItem = targetItem;
 
-            setTimeout(() => {
-                if (inputElement) inputElement.focus();
-            }, 50);
-        }, displayTime);
+            timerId = setTimeout(() => {
+                currentItem = '';
+                waitingForInput = true;
+
+                if (!isPractice) {
+                    setTimeout(() => {
+                        if (inputElement) inputElement.focus();
+                    }, 50);
+                }
+            }, displayTime);
+        }, delayBeforeShow);
     }
 
     function checkAnswer() {
-        if (!waitingForInput && !isRepeating) return;
+        if (!waitingForInput) return;
 
+        // Ako je Practice mod, klik na Next prebacuje na iduću stavku
+        if (isPractice) {
+            waitingForInput = false;
+            currentIndex++;
+            if (isRunning) {
+                nextFlash();
+            }
+            return;
+        }
+
+        // Takmičarski mod provjerava unos
         const cleanTarget = targetItem.toString().trim().toLowerCase();
         const cleanInput = userInput.toString().trim().toLowerCase();
 
         let isCorrect = (cleanInput === cleanTarget);
 
-        if (!isRepeating) {
-            totalAttempts++;
-            if (isCorrect) {
-                correctAttempts++;
-                feedbackResult = 'correct';
-            } else {
-                feedbackResult = 'incorrect';
-            }
-        } else {
-            if (isCorrect) {
-                feedbackResult = 'correct';
-            } else {
-                feedbackResult = 'incorrect';
-            }
-        }
+        totalAttempts++;
+        if (isCorrect) correctAttempts++;
+        feedbackResult = isCorrect ? 'correct' : 'incorrect';
 
-        // Progresivni mod: ako je tačno i uključen je progresivni start, ubrzavamo za 5ms (min 50ms)
         if (isCorrect && progressiveMode) {
             displayTime = Math.max(50, displayTime - 10);
         }
 
         waitingForInput = false;
-        isRepeating = false;
         currentIndex++;
 
         setTimeout(() => {
@@ -159,29 +177,24 @@
         }, 1200);
     }
 
-    function repeatWord() {
-        if (!targetItem) return;
-        
-        isRepeating = true;
-        waitingForInput = false;
-        feedbackResult = null;
-        userInput = '';
-        currentItem = targetItem;
+    function repeatCurrent() {
+        // Ponovo flešuje TRENUTNU riječ na isti brzinski način (displayTime)
+        if (!isPractice || !targetItem || !waitingForInput) return;
 
         clearTimeout(timerId);
+        currentItem = targetItem;
+
         timerId = setTimeout(() => {
             currentItem = '';
             waitingForInput = true;
-
-            setTimeout(() => {
-                if (inputElement) inputElement.focus();
-            }, 50);
         }, displayTime);
     }
 
     function handleKeydown(e) {
         if (e.key === 'Enter') {
-            checkAnswer();
+            if (waitingForInput) {
+                checkAnswer();
+            }
         }
     }
 
@@ -190,6 +203,7 @@
         sessionFinished = true;
         waitingForInput = false;
         clearTimeout(timerId);
+        clearTimeout(waitTimerId);
         currentItem = '';
         userInput = '';
         feedbackResult = null;
@@ -199,40 +213,19 @@
 <h1 class="text-center mb-3">Tachistoscope</h1>
 
 <div class="tachistoscope-wrap p-3 border rounded bg-light">
-    <!-- Izbor moda, podešavanja (prikazuje se kad igra ne traje) -->
+    <!-- Podešavanja (prikazuje se kad vježba ne traje) -->
     {#if !isRunning}
         <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded">
             <div class="form-check">
-                <input
-                    class="form-check-input"
-                    type="radio"
-                    name="tMode"
-                    id="modeText"
-                    value="text"
-                    bind:group={mode}
-                />
+                <input class="form-check-input" type="radio" name="tMode" id="modeText" value="text" bind:group={mode} />
                 <label class="form-check-label fw-bold" for="modeText">Tekst</label>
             </div>
             <div class="form-check">
-                <input
-                    class="form-check-input"
-                    type="radio"
-                    name="tMode"
-                    id="modeNumbers"
-                    value="numbers"
-                    bind:group={mode}
-                />
+                <input class="form-check-input" type="radio" name="tMode" id="modeNumbers" value="numbers" bind:group={mode} />
                 <label class="form-check-label fw-bold" for="modeNumbers">Brojevi</label>
             </div>
             <div class="form-check">
-                <input
-                    class="form-check-input"
-                    type="radio"
-                    name="tMode"
-                    id="modeMix"
-                    value="mix"
-                    bind:group={mode}
-                />
+                <input class="form-check-input" type="radio" name="tMode" id="modeMix" value="mix" bind:group={mode} />
                 <label class="form-check-label fw-bold" for="modeMix">Mix</label>
             </div>
         </div>
@@ -240,136 +233,129 @@
         {#if mode === 'text' || mode === 'mix'}
             <div class="mb-2">
                 <label for="custom-words" class="form-label small fw-bold mb-1">Tvoje riječi:</label>
-                <textarea
-                    id="custom-words"
-                    class="form-control form-control-sm"
-                    rows="2"
-                    bind:value={customWordsInput}></textarea>
+                <textarea id="custom-words" class="form-control form-control-sm" rows="2" bind:value={customWordsInput}></textarea>
             </div>
         {/if}
 
         {#if mode === 'numbers' || mode === 'mix'}
             <div class="mb-2">
                 <label for="custom-numbers" class="form-label small fw-bold mb-1">Tvoji brojevi:</label>
-                <textarea
-                    id="custom-numbers"
-                    class="form-control form-control-sm"
-                    rows="2"
-                    bind:value={customNumbersInput}></textarea>
+                <textarea id="custom-numbers" class="form-control form-control-sm" rows="2" bind:value={customNumbersInput}></textarea>
             </div>
         {/if}
 
-        <!-- Slider za brzinu prikaza -->
-        <div class="mb-2">
-            <label class="form-label small mb-1"
-                >Brzina prikaza (ms): <strong>{displayTime}</strong></label
-            >
-            <input
-                type="range"
-                class="form-range"
-                min="50"
-                max="600"
-                step="25"
-                bind:value={displayTime}
-            />
+        <!-- Checkboxevi za Random čekanje i Progresivno -->
+        <div class="mb-3 d-flex flex-column gap-2 bg-white p-2 border rounded">
+            <div class="form-check">
+                <input class="form-check-input ms-1" type="checkbox" id="randomWaitCheck" bind:checked={randomWait} />
+                <label class="form-check-label small fw-bold ms-2" for="randomWaitCheck">🎲 Random vrijeme iščekivanja (nasumična pauza)</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input ms-1" type="checkbox" id="progressiveCheck" bind:checked={progressiveMode} />
+                <label class="form-check-label small fw-bold ms-2 text-dark" for="progressiveCheck">⚡ Progresivno ubrzavanje (samo za takmičarski mod)</label>
+            </div>
         </div>
 
-        <!-- Slider za broj riječi/brojeva u jednom bljesku -->
+        <!-- Slider za brzinu prikaza -->
+        <div class="mb-2">
+            <label class="form-label small mb-1">Brzina prikaza (ms): <strong>{displayTime}</strong></label>
+            <input type="range" class="form-range" min="50" max="600" step="25" bind:value={displayTime} />
+        </div>
+
+        <!-- Slider za broj riječi/brojeva -->
         <div class="mb-3">
-            <label class="form-label small mb-1"
-                >Broj riječi po prikazu: <strong>{wordsCount}</strong></label
-            >
-            <input
-                type="range"
-                class="form-range"
-                min="1"
-                max="5"
-                step="1"
-                bind:value={wordsCount}
-            />
+            <label class="form-label small mb-1">Broj riječi po prikazu: <strong>{wordsCount}</strong></label>
+            <input type="range" class="form-range" min="1" max="5" step="1" bind:value={wordsCount} />
         </div>
     {:else}
         <div class="alert alert-secondary py-2 text-center small mb-3">
-            Vježba u toku ({progressiveMode ? '⚡ Progresivno' : '🚀 Normalno'}). Režim: <strong>{mode.toUpperCase()}</strong> | Brzina:
-            <strong>{displayTime}ms</strong> | Riječi po prikazu: <strong>{wordsCount}</strong> | Blok: {currentIndex + 1} / {sequenceArray.length}
+            Režim: <strong>{isPractice ? '🟢 Practice Mod' : (progressiveMode ? '⚡ Takmičarski (Normalno + Progresivno)' : '🚀 Takmičarski (Normalno)')}</strong> | 
+            Tip: <strong>{mode.toUpperCase()}</strong> | Brzina: <strong>{displayTime}ms</strong> | Stavka: {currentIndex + 1} / {sequenceArray.length}
         </div>
     {/if}
 
-    {#if sessionFinished && totalAttempts > 0}
+    {#if sessionFinished && !isPractice && totalAttempts > 0}
         <div class="alert alert-success text-center py-3 mb-3">
             <h5 class="fw-bold mb-1">🎯 Vježba završena!</h5>
             <p class="mb-1">Tačnost: <strong class="fs-4 text-success">{Math.round((correctAttempts / totalAttempts) * 100)}%</strong></p>
             <small class="text-muted">Tačno {correctAttempts} od {totalAttempts} pokušaja.</small>
         </div>
+    {:else if sessionFinished && isPractice}
+        <div class="alert alert-info text-center py-3 mb-3">
+            <h5 class="fw-bold mb-1">🏁 Practice završen!</h5>
+            <small class="text-muted">Uspješno prošao cijeli niz.</small>
+        </div>
     {/if}
 
     <!-- Ekran za flešovanje -->
-    <div
-        class="flash-screen mb-3 d-flex align-items-center justify-content-center text-center p-3 border bg-white rounded shadow-sm position-relative"
-    >
+    <div class="flash-screen mb-3 d-flex flex-column align-items-center justify-content-center text-center p-3 border bg-white rounded shadow-sm position-relative">
         <span class="flash-word">
             {currentItem ||
                 (isRunning && !waitingForInput
                     ? '...'
                     : waitingForInput
-                        ? 'Upiši viđeno ispod ↓'
+                        ? (isPractice ? 'Pritisni Next ili Repeat →' : 'Upiši viđeno ispod ↓')
                         : 'Spremno...')}
         </span>
 
         {#if feedbackResult === 'correct'}
-            <div
-                class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-success bg-opacity-75 text-white rounded fs-1 fw-bold animate-fade"
-            >
+            <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-success bg-opacity-75 text-white rounded fs-1 fw-bold animate-fade">
                 ✅ Tačno!
             </div>
         {:else if feedbackResult === 'incorrect'}
-            <div
-                class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-danger bg-opacity-75 text-white rounded fs-6 fw-bold animate-fade px-2 text-center"
-            >
+            <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-danger bg-opacity-75 text-white rounded fs-6 fw-bold animate-fade px-2 text-center">
                 ❌ Netačno! <span class="ms-1">(Bilo je: {targetItem})</span>
             </div>
         {/if}
     </div>
 
-    <!-- Input polje, Check i Repeat -->
+    <!-- Kontrole za unos ili navigaciju -->
     <div class="input-group mb-3">
-        <input
-            bind:this={inputElement}
-            type="text"
-            class="form-control"
-            placeholder={waitingForInput || isRepeating ? 'Upiši sve riječi sa razmakom...' : 'Pokreni vježbu...'}
-            bind:value={userInput}
-            disabled={!waitingForInput && !isRepeating}
-            autocomplete="off"
-            onkeydown={handleKeydown}
-        />
+        {#if !isPractice}
+            <!-- Takmičarski mod ima polje za unos -->
+            <input
+                bind:this={inputElement}
+                type="text"
+                class="form-control"
+                placeholder={waitingForInput ? 'Upiši viđeno...' : 'Pokreni vježbu...'}
+                bind:value={userInput}
+                disabled={!waitingForInput}
+                autocomplete="off"
+                onkeydown={handleKeydown}
+            />
+        {/if}
+        
+        <!-- Repeat dugme se prikazuje ISKLJUČIVO u Practice modu i ponavlja trenutnu riječ brzo -->
+        {#if isPractice}
+            <button
+                class="btn btn-outline-secondary fw-bold px-3"
+                type="button"
+                onclick={repeatCurrent}
+                disabled={!waitingForInput}
+                title="Ponavljaj trenutačni fleš iste brzine"
+            >
+                🔄 Repeat
+            </button>
+        {/if}
+
         <button
-            class="btn btn-outline-secondary fw-bold px-3"
-            type="button"
-            onclick={repeatWord}
-            disabled={!isRunning || !targetItem}
-            title="Prikaži ponovo istu riječ"
-        >
-            🔄 Repeat
-        </button>
-        <button
-            class="btn btn-outline-success fw-bold px-4"
+            class="btn {isPractice ? 'btn-primary flex-fill' : 'btn-outline-success'} fw-bold px-4"
             type="button"
             onclick={checkAnswer}
-            disabled={!waitingForInput && !isRepeating}
+            disabled={!waitingForInput}
         >
-            Check
+            {isPractice ? 'Next →' : 'Check'}
         </button>
     </div>
 
-    <!-- Kontrole: Dva dugmeta za start (Normalni i Progresivni) ili Stop -->
-    <div class="d-flex gap-2 justify-content-center">
+    <!-- Dugmad za Start / Stop -->
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
         {#if !isRunning}
-            <button class="btn btn-primary flex-fill" onclick={() => startTachistoscope(false)}>
-                {sessionFinished ? '🚀 Nova igra (Normalno) ' : '🚀 Start (Normalno)'}
+            <button class="btn btn-primary flex-fill py-2 fw-bold" onclick={startTachistoscope}>
+                {sessionFinished ? '🚀 Nova igra (Takmičarski)' : '🚀 Start (Takmičarski)'}
             </button>
-            <button class="btn btn-warning flex-fill fw-bold text-dark" onclick={() => startTachistoscope(true)}>
-                {sessionFinished ? '⚡ Nova igra (Progresivno) ' : '⚡ Start (Progresivno)'}
+            <button class="btn btn-success flex-fill py-2 fw-bold" onclick={startPracticeMode}>
+                {sessionFinished ? '🟢 Nova igra (Practice)' : '🟢 Practice Start'}
             </button>
         {:else}
             <button class="btn btn-danger w-100" onclick={stopTachistoscope}>Završi Vježbu</button>
@@ -379,7 +365,7 @@
 
 <style>
     .flash-screen {
-        height: 100px;
+        min-height: 110px;
         background: #ffffff;
         overflow: hidden;
     }
