@@ -212,10 +212,10 @@
 
 <h1 class="text-center mb-3">Tachistoscope</h1>
 
-<div class="tachistoscope-wrap p-3 border rounded bg-light">
+<div class="tachistoscope-wrap p-3 border rounded bg-light overflow-hidden">
     <!-- Podešavanja (prikazuje se kad vježba ne traje) -->
     {#if !isRunning}
-        <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded">
+        <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded flex-wrap gap-2">
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="tMode" id="modeText" value="text" bind:group={mode} />
                 <label class="form-check-label fw-bold" for="modeText">Tekst</label>
@@ -374,5 +374,6 @@
         font-weight: bold;
         color: #212529;
         letter-spacing: 1px;
+        word-break: break-word;
     }
 </style>
