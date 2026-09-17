@@ -1,14 +1,24 @@
 <script>
     import Sidebar from './Sidebar.svelte';
     import Reader from './Reader.svelte';
+let marginDebljina=$state(2);
+let changeColor=$state('#46b2e0');
+
+
 </script>
 <svelte:head>
   <title>Brzo Čitanje</title>
 </svelte:head>
-<Sidebar />
+
+
+
+
+
+
+<Sidebar bind:marginDebljina bind:changeColor />
 
 <div class="d-flex justify-content-center container">
-    <Reader />
+    <Reader {marginDebljina} {changeColor} />
 </div>
 
 <style>

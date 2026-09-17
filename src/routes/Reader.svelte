@@ -1,6 +1,6 @@
 <script>
 /* global Swal*/
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
         onAuthStateChanged 
@@ -13,7 +13,7 @@
 
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
-
+  let {changeColor ,marginDebljina} =$props();
   onMount(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             currentUser = user;
@@ -21,6 +21,12 @@
                 await loadUserSettings();
             }
         });
+
+
+        //Podešavanje
+
+      
+
 
         // Slušalica za Escape taster
         window.addEventListener('keydown', handleGlobalKeydown);
@@ -1035,8 +1041,8 @@
 
     <div class="reader-content-wrap" style="width: {readerWidthPercent}%; margin: 0 auto;">
         {#if marginLinesEnabled}
-            <div class="margin-line" style="left: {marginLeftPercent}%;"></div>
-            <div class="margin-line" style="right: {marginRightPercent}%;"></div>
+            <div class="margin-line"  style=" left: {marginLeftPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
+            <div class="margin-line"  style=" right: {marginRightPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
         {/if}
         <div
             bind:this={readerContentEl}
@@ -1104,8 +1110,6 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 1.7px;
-        background: #46b2e0;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
