@@ -1,6 +1,6 @@
 <script>
-/* global Swal */
-	import Wpm from "./Wpm.svelte";
+	/* global Swal */
+	import Wpm from './Wpm.svelte';
 
 	// --- Countdown timer ---
 	let minutesInput = $state(1);
@@ -10,7 +10,16 @@
 	let countdownIntervalId = null;
 	let hasStarted = $state(false); // false = jos nije pokrenut, prikaz prati inpute uzivo
 
-   let {marginDebljina = $bindable(), changeColor=$bindable()}=$props();
+	let { marginDebljina = $bindable(), changeColor = $bindable() } = $props();
+
+
+function resetMargin () {
+	
+marginDebljina=1;
+changeColor='#46b2e0'
+
+};
+
 
 	function formatTime(totalSeconds) {
 		const m = Math.floor(totalSeconds / 60);
@@ -127,15 +136,14 @@
 
 	<div>
 		<button
-		class="btn btn-outline-info "
-		type="button"
-		title="Podesavanja i WpM"
-		data-bs-toggle="offcanvas"
-		data-bs-target="#offcanvasScrolling"
-		aria-controls="offcanvasScrolling">Wpm</button
-	>
+			class="btn btn-outline-info"
+			type="button"
+			title="Podesavanja i WpM"
+			data-bs-toggle="offcanvas"
+			data-bs-target="#offcanvasScrolling"
+			aria-controls="offcanvasScrolling">Wpm</button
+		>
 	</div>
-	
 
 	<button
 		class="qt-btn qt-settings"
@@ -181,7 +189,13 @@
 							<label class="form-label">Sekundi</label>
 						</div>
 						<div class="col-7">
-							<input type="number" min="0" max="59" class="form-control" bind:value={secondsInput} />
+							<input
+								type="number"
+								min="0"
+								max="59"
+								class="form-control"
+								bind:value={secondsInput}
+							/>
 						</div>
 					</div>
 				</div>
@@ -192,34 +206,41 @@
 			</div>
 		</fieldset>
 
-<Wpm></Wpm>
+		<Wpm></Wpm>
 
-<fieldset class="border p-3 rounded mt-2">
-<legend class="text-center fw-bold text-danger">Margine</legend>
+		<fieldset class="border p-3 rounded mt-2">
+			<legend class="text-center fw-bold text-danger">Margine</legend>
 
-<div class="toolbar-group d-flex align-items-center gap-2">
-                    <span class="fw-bold small ms-3">Širina</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                       <button class="btn btn-outline-danger" type="button" onclick={() => marginDebljina = Math.max(1, marginDebljina - 1)}>−</button>
-<p class="btn btn-light disabled px-2 fw-bolder">{marginDebljina}</p>
-<button class="btn btn-outline-danger" type="button" onclick={() => marginDebljina += 1}>+</button>
-                    </div>
-                </div>
+			<div class="toolbar-group d-flex align-items-center gap-2">
+				<span class="fw-bold small ms-3">Širina</span>
+				<div class="btn-group btn-group-sm" role="group">
+					<button
+						class="btn btn-outline-danger"
+						type="button"
+						onclick={() => (marginDebljina = Math.max(1, marginDebljina - 1))}>−</button
+					>
+					<p class="btn btn-light disabled px-2 fw-bolder">{marginDebljina}</p>
+					<button class="btn btn-outline-danger" type="button" onclick={() => (marginDebljina += 1)}
+						>+</button
+					>
+				</div>
+			</div>
 
-<div class="container-fluid">
-
+			<div class="container-fluid">
 				<div class="row mt-2">
-				<div class="col-2">
-<label class="fw-bold" for="">Color</label>
+					<div class="col-2">
+						<label class="fw-bold" for="">Color</label>
+					</div>
+					<div class="col-10">
+						<input bind:value={changeColor} type="color" class="w-25 form-control" />
+					</div>
 				</div>
-				<div class="col-10">
-						<input bind:value={changeColor} type="color" class="w-25 form-control">
-				</div>
-				
-				</div>
-				</div>
-	
-</fieldset>
+			</div>
+<div class="container d-flex justify-content-center">
+		<button onclick={resetMargin} class="btn btn-danger mt-3">Reset</button>
+</div>
+		
+		</fieldset>
 
 		<!-- WPM racunanje - dodaces sam kasnije -->
 	</div>
