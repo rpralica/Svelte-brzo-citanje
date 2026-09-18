@@ -7,7 +7,7 @@
   
 
     <button
-        class="qt-btn qt-settings"
+        class="qt-btn qt-settings ms-auto"
         type="button"
         title="Podesavanja i WpM"
         data-bs-toggle="offcanvas"
@@ -74,22 +74,21 @@
     /* Na malim ekranima - traka ide na dno */
     @media (max-width: 768px) {
         .quick-timer-strip {
-            left: 0;
-            right: 0;
-            top: auto;
-            bottom: 0;
-            width: 100%;
-            height: 68px;
-            flex-direction: row;
-            justify-content: space-evenly;
-            align-items: center;
-            padding: 4px 6px;
-            gap: 10px;
-            border-left: none;
-            border-top: 1px solid #ddd;
-            overflow-x: auto;
-            overflow-y: hidden;
-        }
+        position: fixed;
+        right: 0;
+        top: 70px;
+        bottom: 50px; /* <--- Ovdje smo je odigli od dna za 50px da pobjegne od Netlify logoa */
+        width: 78px;
+        background: #f8f9fa;
+        border-left: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 4px;
+        gap: 16px;
+        z-index: 1030;
+        overflow-y: auto;
+    }
         .qt-settings {
             margin-top: 0;
             width: 36px;
