@@ -70,7 +70,7 @@
                     bind:value={rijeci}
                     oninput={rijeciCh}
                     onchange={rijeciCh}
-                    min="10"
+                    min="0"
                     step="100"
                     type="number"
                     class="form-control w-50 mb-2 fw-bold"
@@ -79,7 +79,7 @@
                     value={min}
                     oninput={minCh}
                     onchange={minCh}
-                    min="1"
+                    min="0"
                     type="number"
                     class="form-control w-50 fw-bold"
                 />
@@ -87,7 +87,7 @@
                     value={sek}
                     oninput={sekCh}
                     onchange={sekCh}
-                    min="1"
+                    min="0"
                     type="number"
                     class="form-control w-50 mt-2 fw-bold"
                 />
@@ -96,7 +96,7 @@
                     oninput={wpmCh}
                     onchange={wpmCh}
                     type="number"
-                    min="10"
+                    min="0"
                     step="10"
                     class="form-control w-50 fw-bold mt-2"
                 />
