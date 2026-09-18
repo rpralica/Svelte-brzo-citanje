@@ -1,6 +1,5 @@
 <script>
 	/* global Swal */
-	import Wpm from './Wpm.svelte';
 
 	// --- Countdown timer ---
 	let minutesInput = $state(1);
@@ -12,14 +11,10 @@
 
 	let { marginDebljina = $bindable(), changeColor = $bindable() } = $props();
 
-
-function resetMargin () {
-	
-marginDebljina=1;
-changeColor='#46b2e0'
-
-};
-
+	function resetMargin() {
+		marginDebljina = 1;
+		changeColor = '#46b2e0';
+	}
 
 	function formatTime(totalSeconds) {
 		const m = Math.floor(totalSeconds / 60);
@@ -134,21 +129,10 @@ changeColor='#46b2e0'
 		</div>
 	</div>
 
-	<div>
-		<button
-			class="btn btn-outline-info"
-			type="button"
-			title="Podesavanja i WpM"
-			data-bs-toggle="offcanvas"
-			data-bs-target="#offcanvasScrolling"
-			aria-controls="offcanvasScrolling">Wpm</button
-		>
-	</div>
-
 	<button
 		class="qt-btn qt-settings"
 		type="button"
-		title="Podesavanja i WpM"
+		title="Podesavanja"
 		data-bs-toggle="offcanvas"
 		data-bs-target="#offcanvasScrolling"
 		aria-controls="offcanvasScrolling">⚙</button
@@ -165,7 +149,7 @@ changeColor='#46b2e0'
 	aria-labelledby="offcanvasScrollingLabel"
 >
 	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja i WpM</h5>
+		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body container">
@@ -206,8 +190,6 @@ changeColor='#46b2e0'
 			</div>
 		</fieldset>
 
-		<Wpm></Wpm>
-
 		<fieldset class="border p-3 rounded mt-2">
 			<legend class="text-center fw-bold text-danger">Margine</legend>
 
@@ -236,13 +218,10 @@ changeColor='#46b2e0'
 					</div>
 				</div>
 			</div>
-<div class="container d-flex justify-content-center">
-		<button onclick={resetMargin} class="btn btn-danger mt-3">Reset</button>
-</div>
-		
+			<div class="container d-flex justify-content-center">
+				<button onclick={resetMargin} class="btn btn-danger mt-3">Reset</button>
+			</div>
 		</fieldset>
-
-		<!-- WPM racunanje - dodaces sam kasnije -->
 	</div>
 </div>
 

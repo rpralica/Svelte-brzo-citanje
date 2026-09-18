@@ -1,6 +1,6 @@
 <script>
 /* global Swal*/
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
         onAuthStateChanged 
@@ -11,25 +11,19 @@
         setDoc 
     } from 'firebase/firestore';
 
+//Podešavanje
+let {changeColor ,marginDebljina} =$props();
+
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
-  let {changeColor ,marginDebljina} =$props();
-  onMount(() => {
+
+    onMount(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user) {
                 await loadUserSettings();
             }
         });
-
-
-        //Podešavanje
-
-      
-
-
-        // Slušalica za Escape taster
-        window.addEventListener('keydown', handleGlobalKeydown);
 
         // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
         const handleVisibilityChange = () => {
@@ -42,21 +36,10 @@
 
         return () => {
             unsubscribe();
-            window.removeEventListener('keydown', handleGlobalKeydown);
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('beforeunload', savePositionQuietly);
         };
     });
-
-    // --- Globalni listener za Esc taster (pauza sesije) ---
-    function handleGlobalKeydown(e) {
-        if (e.key === 'Escape') {
-            // Ako je sesija aktivna (pacer ili race), a već nije pauzirana -> pauziraj je
-            if ((paceActive || raceActive) && !isPaused) {
-                pauseSession();
-            }
-        }
-    }
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
@@ -644,8 +627,8 @@
     let searchResults = $state([]);
 
     function runSearch() {
-        const q = searchQuery.trim().toLowerCase();
-        if (!q) {
+        const qWords = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        if (qWords.length === 0) {
             searchResults = [];
             return;
         }
@@ -653,10 +636,17 @@
         for (let p = 0; p < pagesWordsCache.length; p++) {
             const pw = pagesWordsCache[p];
             if (!pw) continue;
-            for (let i = 0; i < pw.length; i++) {
-                if (pw[i].toLowerCase().includes(q)) {
+            for (let i = 0; i <= pw.length - qWords.length; i++) {
+                let match = true;
+                for (let k = 0; k < qWords.length; k++) {
+                    if (!pw[i + k].toLowerCase().includes(qWords[k])) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
                     const start = Math.max(0, i - 4);
-                    const end = Math.min(pw.length, i + 5);
+                    const end = Math.min(pw.length, i + qWords.length + 4);
                     const context = pw.slice(start, end).join(' ');
                     results.push({ page: p + 1, wordIndex: i, context });
                     if (results.length >= 200) break;
@@ -729,11 +719,8 @@
         });
     }
 
-   async function closePdf() {
-        // Prvo sačuvaj poziciju dok ime fajla još postoji
-        await savePositionQuietly();
-
-        // Tek onda resetuj stanje na početne vrijednosti
+    function closePdf() {
+        savePositionQuietly();
         currentFileName = '';
         words = [];
         pdfDoc = null;
@@ -1040,7 +1027,7 @@
     {/if}
 
     <div class="reader-content-wrap" style="width: {readerWidthPercent}%; margin: 0 auto;">
-        {#if marginLinesEnabled}
+     {#if marginLinesEnabled}
             <div class="margin-line"  style=" left: {marginLeftPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
             <div class="margin-line"  style=" right: {marginRightPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
         {/if}
@@ -1084,17 +1071,15 @@
             </div>
         </div>
 
-        <div class="card-body py-2">
-            <div class="card mb-3">
-                <div class="card-body py-2">
-                    <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
-                        <button class="btn btn-outline-success btn-sm" type="button" onclick={setMarkerStart}>Marker Početak</button>
-                        <button class="btn btn-outline-danger btn-sm" type="button" onclick={setMarkerEnd}>Marker Kraj</button>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick={clearMarkers}>Obriši markere</button>
-                        {#if markerWordCount > 0}
-                            <span class="info ms-2">Pročitano: {markerWordCount} riječi</span>
-                        {/if}
-                    </div>
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
+                    <button class="btn btn-outline-success btn-sm" type="button" onclick={setMarkerStart}>Marker Početak</button>
+                    <button class="btn btn-outline-danger btn-sm" type="button" onclick={setMarkerEnd}>Marker Kraj</button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick={clearMarkers}>Obriši markere</button>
+                    {#if markerWordCount > 0}
+                        <span class="info ms-2">Pročitano: {markerWordCount} riječi</span>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -1110,6 +1095,8 @@
         position: absolute;
         top: 0;
         bottom: 0;
+        width: 2px;
+        background: #6068e0d5;
         opacity: 0.6;
         pointer-events: none;
         z-index: 2;
@@ -1120,7 +1107,7 @@
     .pos-mark { background: #ffe066; border-radius: 2px; }
     .start-mark { background: #a5d8ff; border-radius: 2px; }
     .end-mark { background: #b2f2bb; border-radius: 2px; }
-    .pace-mark { background: var(--pace-mark-color, #a8d4ff); border-radius: 2px; }
+    .pace-mark { background: var(--pace-mark-color, #ffa8a8); border-radius: 2px; }
     .info { font-size: 15px; color: #333; }
     .search-results { max-height: 250px; overflow-y: auto; }
     .search-result-item { padding: 4px 2px; cursor: pointer; border-bottom: 1px solid #eee; }

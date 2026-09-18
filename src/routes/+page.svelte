@@ -1,6 +1,7 @@
 <script>
 	import Sidebar from './Sidebar.svelte';
 	import Reader from './Reader.svelte';
+	import SidebarDesni from './SidebarDesni.svelte';
 
 	const MARGIN_KEY = 'margin_debljina';
 	const COLOR_KEY = 'margin_boja';
@@ -30,6 +31,8 @@
 </svelte:head>
 
 <Sidebar bind:marginDebljina bind:changeColor />
+
+<SidebarDesni></SidebarDesni>
 
 <div class="d-flex justify-content-center container">
 	<Reader {marginDebljina} {changeColor} />
