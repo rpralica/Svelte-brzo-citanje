@@ -16,6 +16,13 @@
 			: '#46b2e0'
 	);
 
+  function clearTa() {
+        pastedText = '';
+    }
+
+	let pastedText=$state('');
+
+
 	// Automatski snimi svaki put kad se bilo koja od ove dvije vrijednosti promijeni,
 	// bez obzira odakle je promjena stigla (Sidebar preko bind:, ili bilo ko drugi)
 	$effect(() => {
@@ -32,10 +39,10 @@
 
 <Sidebar bind:marginDebljina bind:changeColor />
 
-<SidebarDesni></SidebarDesni>
+<SidebarDesni {clearTa}></SidebarDesni>
 
 <div class="d-flex justify-content-center container">
-	<Reader {marginDebljina} {changeColor} />
+	<Reader {marginDebljina} {changeColor} {clearTa} bind:pastedText />
 </div>
 
 <style>

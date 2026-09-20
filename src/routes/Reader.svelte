@@ -12,7 +12,7 @@
     } from 'firebase/firestore';
 
 //Podešavanje
-let {changeColor ,marginDebljina} =$props();
+let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
 
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
@@ -76,9 +76,9 @@ let {changeColor ,marginDebljina} =$props();
     const FONT_MIN = 12;
     const FONT_MAX = 60;
 
-    function clearTa() {
-        pastedText = '';
-    }
+    // function clearTa() {
+    //     pastedText = '';
+    // }
 
     let raceAverageWpm = $derived.by(() => {
         if (raceStats.length === 0) return 0;
@@ -683,7 +683,7 @@ let {changeColor ,marginDebljina} =$props();
 
     let wordCountLabel = $derived('Riječi na stranici: ' + words.length);
 
-    let pastedText = $state('');
+   // let pastedText = $state('');
     let pastedWordCount = $derived(splitToWords(pastedText).length);
     let selectedWordCount = $state(0);
 
@@ -870,7 +870,7 @@ let {changeColor ,marginDebljina} =$props();
                     {/if}
                 </div>
             </div>
-            <button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2">Clear</button>
+            <button onclick={clearTa}  style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2">Clear</button>
         </div>
     {/if}
 

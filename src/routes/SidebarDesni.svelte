@@ -1,5 +1,8 @@
 <script>
     import Wpm from './Wpm.svelte';
+
+  let {clearTa}=$props();
+   
 </script>
 
 <!-- Uski fiksni sidebar - desno, uvijek vidljiv -->
@@ -32,6 +35,7 @@
     <div class="offcanvas-body container">
         <Wpm></Wpm>
     </div>
+      <button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2">Clear</button>
 </div>
 
 <style>
