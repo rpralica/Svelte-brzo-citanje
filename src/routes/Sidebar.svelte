@@ -242,7 +242,7 @@ async function resetPacer() {
 			<legend class="text-center fw-bold text-danger">Margine</legend>
 
 			<div class="toolbar-group d-flex align-items-center gap-2">
-				<span class="fw-bold small ms-3">Širina</span>
+				<span class="fw-bold small ms-3">Debljina</span>
 				<div class="btn-group btn-group-sm" role="group">
 					<button
 						class="btn btn-outline-danger"

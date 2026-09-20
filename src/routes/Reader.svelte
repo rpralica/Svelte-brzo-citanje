@@ -113,7 +113,7 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
 
     // --- Sirina reader-content diva ---
     let readerWidthPercent = $state(100);
-    const WIDTH_MIN = 30;
+    const WIDTH_MIN = 20;
     const WIDTH_MAX = 100;
     const WIDTH_STEP = 10;
 
