@@ -3,8 +3,11 @@
 	import Reader from './Reader.svelte';
 	import SidebarDesni from './SidebarDesni.svelte';
 
+
+	const PACER_KEY = 'pacer_color';
 	const MARGIN_KEY = 'margin_debljina';
 	const COLOR_KEY = 'margin_boja';
+
 	let marginDebljina = $state(
 		typeof localStorage !== 'undefined' && localStorage.getItem(MARGIN_KEY) !== null
 			? parseInt(localStorage.getItem(MARGIN_KEY), 10)
@@ -16,6 +19,13 @@
 			: '#46b2e0'
 	);
 
+	let pacerColor = $state(
+		typeof localStorage !== 'undefined' && localStorage.getItem(PACER_KEY) !== null
+			? localStorage.getItem(PACER_KEY)
+			: '#ffa8a8'
+	);
+
+	
   function clearTa() {
         pastedText = '';
     }
@@ -31,18 +41,22 @@
 	$effect(() => {
 		localStorage.setItem(COLOR_KEY, changeColor);
 	});
+	$effect(() => {
+		localStorage.setItem(PACER_KEY, pacerColor);
+		 document.documentElement.style.setProperty('--pace-mark-color', pacerColor);
+	});
 </script>
 
 <svelte:head>
 	<title>Brzo Čitanje</title>
 </svelte:head>
 
-<Sidebar bind:marginDebljina bind:changeColor />
+<Sidebar bind:marginDebljina bind:changeColor bind:pacerColor />
 
 <SidebarDesni {clearTa}></SidebarDesni>
 
 <div class="d-flex justify-content-center container">
-	<Reader {marginDebljina} {changeColor} {clearTa} bind:pastedText />
+	<Reader {marginDebljina} {changeColor} {pacerColor} {clearTa} bind:pastedText />
 </div>
 
 <style>

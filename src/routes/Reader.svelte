@@ -456,7 +456,7 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
 
     // --- Pacer ---
     let paceWpm = $state(300);
-    let paceChunkSize = $state(3); 
+    let paceChunkSize = $state(2); 
     let paceActive = $state(false); 
     let paceIndex = $state(0);
     let paceIntervalId = null;

@@ -9,12 +9,57 @@
 	let countdownIntervalId = null;
 	let hasStarted = $state(false); // false = jos nije pokrenut, prikaz prati inpute uzivo
 
-	let { marginDebljina = $bindable(), changeColor = $bindable() } = $props();
+	let { marginDebljina = $bindable(), changeColor = $bindable() , pacerColor= $bindable() } = $props();
 
-	function resetMargin() {
-		marginDebljina = 1;
-		changeColor = '#46b2e0';
-	}
+async function resetMargin() {
+    const result = await Swal.fire({
+        title: 'Resetovati margine?',
+        text: 'Vratiti debljinu i boju na podrazumijevane vrijednosti?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Da, resetuj',
+        cancelButtonText: 'Otkazi'
+    });
+
+    if (result.isConfirmed) {
+        marginDebljina = 1;
+        changeColor = '#46b2e0';
+
+        Swal.fire({
+            title: 'Resetovano!',
+            icon: 'success',
+            timer: 1000,
+            showConfirmButton: false
+        });
+    }
+}
+
+
+async function resetPacer() {
+    const result = await Swal.fire({
+        title: 'Resetovati boju pacera ?',
+        text: 'Vratiti  boju na default ?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Da, resetuj',
+        cancelButtonText: 'Otkazi'
+    });
+
+    if (result.isConfirmed) {
+      
+        pacerColor='#ffa8a8';
+
+        Swal.fire({
+            title: 'Resetovano!',
+            icon: 'success',
+            timer: 1000,
+            showConfirmButton: false
+        });
+    }
+}
+
+
+
 
 	function formatTime(totalSeconds) {
 		const m = Math.floor(totalSeconds / 60);
@@ -222,7 +267,28 @@
 				</div>
 			</div>
 			<div class="container d-flex justify-content-center">
-				<button onclick={resetMargin} class="btn btn-danger mt-3">Reset</button>
+				<button onclick={resetMargin} class="btn btn-sm btn-outline-danger  mt-3">Reset</button>
+			</div>
+		</fieldset>
+
+
+		<fieldset class="border p-3 rounded mt-2">
+			<legend class="text-center fw-bold  text-info-emphasis ">Pacer</legend>
+
+		
+
+			<div class="container-fluid">
+				<div class="row mt-2">
+					<div class="col-2">
+						<label class="fw-bold" for="">Color</label>
+					</div>
+					<div class="col-10">
+						<input bind:value={pacerColor} type="color" class="w-25 form-control" />
+					</div>
+				</div>
+			</div>
+			<div class="container d-flex justify-content-center">
+				<button onclick={resetPacer} class="btn btn-sm btn-outline-danger mt-3">Reset</button>
 			</div>
 		</fieldset>
 	</div>
