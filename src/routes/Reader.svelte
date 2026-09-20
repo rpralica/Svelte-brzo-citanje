@@ -17,29 +17,43 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
 
-    onMount(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                await loadUserSettings();
-            }
-        });
-
-        // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                savePositionQuietly();
-            }
-        };
-        window.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('beforeunload', savePositionQuietly);
-
-        return () => {
-            unsubscribe();
-            window.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', savePositionQuietly);
-        };
+   onMount(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (user) {
+            await loadUserSettings();
+        }
     });
+
+    // Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+            savePositionQuietly();
+        }
+    };
+
+    // Esc = pauza/nastavi (toggle) za Race i Pacer
+    function handleGlobalKeydown(e) {
+        if (e.key === 'Escape') {
+            if (isPaused) {
+                resumeSession();
+            } else if (paceActive || raceActive) {
+                pauseSession();
+            }
+        }
+    }
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', savePositionQuietly);
+    window.addEventListener('keydown', handleGlobalKeydown);
+
+    return () => {
+        unsubscribe();
+        window.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('beforeunload', savePositionQuietly);
+        window.removeEventListener('keydown', handleGlobalKeydown);
+    };
+});
 
     // --- Firebase sinhronizacija podešavanja i pozicija ---
     async function saveSettingToFirebase(key, value) {
