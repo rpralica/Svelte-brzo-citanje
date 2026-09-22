@@ -1,5 +1,5 @@
 <script>
-    import Shulte from './Shulte.svelte';
+   
     import Tahitoskop from './Tahitoskop.svelte';
 </script>
 
@@ -9,9 +9,7 @@
 
 <div class="container py-3">
     <div class="row g-4">
-        <div class="col-12 col-lg-6">
-            <Shulte></Shulte>
-        </div>
+        
         <div class="col-12 col-lg-6">
             <Tahitoskop></Tahitoskop>
         </div>

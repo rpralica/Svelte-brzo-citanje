@@ -64,6 +64,7 @@
 			<a href="/" class:active={isActive('/')} onclick={closeMenu}>Čitanje</a>
 			<a href="/dodaci" class:active={isActive('/dodaci')} onclick={closeMenu}>Dodaci</a>
 			<a href="/test" class:active={isActive('/test')} onclick={closeMenu}>Test</a>
+			<a href="/vjezbe" class:active={isActive('/vjezbe')} onclick={closeMenu}>Vježbe</a>
 		</div>
 
 		<!-- Desna strana: Auth sekcija skroz desno -->
