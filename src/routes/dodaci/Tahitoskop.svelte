@@ -211,8 +211,8 @@
 </script>
 
 <h1 class="text-center mb-3">Tachistoscope</h1>
-
-<div class="tachistoscope-wrap p-3 border rounded bg-light overflow-hidden">
+<div class="d-flex justify-content-center ">
+<div  class="tachistoscope-wrap p-3 border rounded bg-light overflow-hidden ">
     <!-- Podešavanja (prikazuje se kad vježba ne traje) -->
     {#if !isRunning}
         <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded flex-wrap gap-2">
@@ -362,12 +362,14 @@
         {/if}
     </div>
 </div>
-
+</div>
 <style>
     .flash-screen {
         min-height: 110px;
         background: #ffffff;
         overflow: hidden;
+        max-width: 600px;
+         margin: 0 auto;
     }
     .flash-word {
         font-size: 1.5rem;
@@ -375,5 +377,12 @@
         color: #212529;
         letter-spacing: 1px;
         word-break: break-word;
+        max-width: 600px; 
+        margin: 0 auto;
     }
+    .tachistoscope-wrap {
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+}
 </style>
