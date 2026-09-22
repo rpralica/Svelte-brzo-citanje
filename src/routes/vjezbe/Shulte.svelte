@@ -55,7 +55,7 @@
 <h1 class="text-center mb-3">Shulte table</h1>
 
 <div class="schulte-wrap">
-	<div class="row mb-3">
+	<div class="d-flex justify-content-center row mb-3">
 		<div class="col-auto">
 			<div class="btn-group" role="group">
 				{#each SIZES as s, i (i)}
@@ -68,7 +68,7 @@
 			</div>
 		</div>
 		<div class="col-auto">
-			<button class="btn btn-success" type="button" onclick={shuffle}>Promiješaj</button>
+			<button class="btn btn-danger" type="button" onclick={shuffle}>Promiješaj</button>
 		</div>
 	</div>
 
