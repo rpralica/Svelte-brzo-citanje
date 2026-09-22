@@ -122,6 +122,7 @@
 
     <div class="eye-track">
         <div class="eye-line"></div>
+          <div class="fixation-point"></div>
         <div
             class="eye-dot"
             style="left: calc(50% + {position * amplituda}% - 15px); transition-duration: {brzinaMs}ms;"
@@ -160,5 +161,16 @@
     .info {
         font-size: 14px;
         color: #555;
+    }
+    .fixation-point {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        background: #110e0b;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        z-index: 1;
     }
 </style>
