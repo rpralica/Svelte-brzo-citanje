@@ -239,6 +239,10 @@ Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obas
     }
 </script>
 
+<svelte:head>
+    <title>Brzo Čitanje</title>
+</svelte:head>
+
 <div class="test-wrap row">
     <fieldset class="border p-3 rounded bg-info">
         <legend class="px-2 fw-bold text-danger text-center pb-4">Test brzine čitanja</legend>
