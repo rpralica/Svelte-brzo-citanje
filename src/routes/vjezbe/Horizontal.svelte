@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
 	// --- Vjezba zagrijavanja - tacka ide sredina -> lijevo -> sredina -> desno -> sredina ---
 	let position = $state(0); // -1 = krajnje lijevo, 0 = sredina, 1 = krajnje desno
 	let running = $state(false);
@@ -7,39 +8,10 @@
 	const pauzaMs = localStore('pauzaMs', 300);
 	const amplituda = localStore('amplituda', 50);
 	const brojPonavljanja = localStore('brojPonavljanja', 5);
-	//Čuvanje brzine
+	 const bojaKrugaHor = localStore('bojaKrugaHor', '#46b2e0');
+      const bojaTackeHor = localStore('bojaTackeHor', '#000000');
 
-	export function localStore(kljuc, pocetnaVrijednost) {
-		let vrijednost = $state(pocetnaVrijednost);
-
-		onMount(() => {
-			try {
-				const sacuvano = localStorage.getItem(kljuc);
-				if (sacuvano !== null) {
-					vrijednost = JSON.parse(sacuvano);
-				}
-			} catch {
-				vrijednost = pocetnaVrijednost;
-			}
-		});
-
-		$effect(() => {
-			try {
-				localStorage.setItem(kljuc, JSON.stringify(vrijednost));
-			} catch (e) {
-				console.warn('localStorage greška:', e);
-			}
-		});
-
-		return {
-			get value() {
-				return vrijednost;
-			},
-			set value(nova) {
-				vrijednost = nova;
-			}
-		};
-	}
+	
 
 	let trenutniCiklus = $state(0);
 
@@ -149,12 +121,27 @@
 			</select>
 		</div>
 
+
+<div class="input-group input-group-sm" style="width: auto;">
+ <span   class="input-group-text">Boja kruga</span>
+    <input style="width: 3rem;height: 1.9rem;" type="color" bind:value={bojaKrugaHor.value} class="form-control">
+</div>
+<div class="input-group input-group-sm" style="width: auto;">
+ <span  class="input-group-text">Boja tačke</span>
+    <input style="width: 3rem;height: 1.9rem;" bind:value={bojaTackeHor.value}  type="color" class="form-control">
+</div>
+
+
 		{#if !running}
 			<button class="btn btn-warning btn-sm" type="button" onclick={start}>▶ Start</button>
 		{:else}
 			<button class="btn btn-danger btn-sm" type="button" onclick={stop}>⏹ Stop</button>
 		{/if}
 	</div>
+
+
+
+
 
 	{#if running}
 		<div class="text-center info mb-2">
@@ -163,11 +150,11 @@
 	{/if}
 
 	<div class="eye-track">
-		<div class="eye-line"></div>
-		<div class="fixation-point"></div>
+		<div  class="eye-line"></div>
+		<div style="background: {bojaTackeHor.value};" class="fixation-point"></div>
 		<div
 			class="eye-dot"
-			style="left: calc(50% + {position * amplituda.value}% - 15px); transition-duration: {brzinaMs.value}ms;"
+			style="left: calc(50% + {position * amplituda.value}% - 15px); transition-duration: {brzinaMs.value}ms; background: {bojaKrugaHor.value}"
 		></div>
 	</div>
 </fieldset>
@@ -194,7 +181,7 @@
 		width: 30px;
 		height: 30px;
 		border-radius: 50%;
-		background: #46b2e0;
+	
 		transform: translateY(-50%);
 		transition-property: left;
 		transition-timing-function: ease-in-out;
@@ -210,7 +197,7 @@
 		left: 50%;
 		width: 10px;
 		height: 10px;
-		background: #110e0b;
+	
 		transform: translate(-50%, -50%);
 		border-radius: 50%;
 		z-index: 1;

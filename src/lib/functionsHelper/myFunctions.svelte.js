@@ -182,3 +182,21 @@ export function localStore(kljuc, pocetnaVrijednost) {
 		}
 	};
 }
+
+/*
+Korištenje u komponenti
+
+
+<script>
+    import { localStore } from '$lib/localStore.js';
+
+    const brzina = localStore('brzinaMs', 1500);
+    const boja = localStore('margin_boja', '#46b2e0');
+    const sirina = localStore('readerWidth', 80);
+</script>
+
+<input type="number" bind:value={brzina.value} />
+<input type="color" bind:value={boja.value} />
+<p>Brzina: {brzina.value}</p>
+
+*/

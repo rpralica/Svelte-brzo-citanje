@@ -8,6 +8,9 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
 	const pauzaMs = localStore('pauzaMs', 300);
 	const amplituda = localStore('amplituda', 50);
 	const brojPonavljanja = localStore('brojPonavljanja', 5);
+      const bojaKrugaVert = localStore('bojaKrugaVert', '#46b2e0');
+      const bojaTackeVert = localStore('bojaTackeVert', '#000000');
+
 
     let trenutniCiklus = $state(0);
     let sequenceId = 0;
@@ -105,6 +108,17 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
             </select>
         </div>
 
+<div class="input-group input-group-sm" style="width: auto;">
+ <span   class="input-group-text">Boja kruga</span>
+    <input style="width: 3rem;height: 1.9rem;" type="color" bind:value={bojaKrugaVert.value} class="form-control">
+</div>
+<div class="input-group input-group-sm" style="width: auto;">
+ <span  class="input-group-text">Boja tačke</span>
+    <input style="width: 3rem;height: 1.9rem;" bind:value={bojaTackeVert.value}  type="color" class="form-control">
+</div>
+
+
+
         {#if !running}
             <button class="btn btn-warning btn-sm" type="button" onclick={start}>▶ Start</button>
         {:else}
@@ -120,10 +134,10 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
 
     <div class="eye-track-v">
         <div class="eye-line-v"></div>
-        <div class="fixation-point"></div>
+        <div style="background: {bojaTackeVert.value};" class="fixation-point"></div>
         <div
             class="eye-dot-v"
-            style="top: calc(50% + {position * amplituda.value}% - 15px); transition-duration: {brzinaMs.value}ms;"
+            style="top: calc(50% + {position * amplituda.value}% - 15px); transition-duration: {brzinaMs.value}ms;background: {bojaKrugaVert.value}"
         ></div>
     </div>
 </fieldset>
@@ -149,7 +163,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background: #46b2e0;
+       
         transform: translateX(-50%);
         transition-property: top;
         transition-timing-function: ease-in-out;
@@ -166,7 +180,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #333;
+  
     transform: translate(-50%, -50%);
     z-index: 1;
 }

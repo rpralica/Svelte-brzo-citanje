@@ -10,7 +10,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
 	const brojPonavljanja = localStore('brojPonavljanja', 5);
 	let minVelicina = $state(10);
 	const maxVelicina = localStore('maxVelicina', 60);
-
+  const bojaTackeNosa = localStore('bojaTackeNosa', '#e0466b');
     let trenutniCiklus = $state(0);
     let sequenceId = 0;
 
@@ -108,6 +108,11 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
             </select>
         </div>
 
+        <div class="input-group input-group-sm" style="width: auto;">
+ <span  class="input-group-text">Boja tačke</span>
+    <input style="width: 3rem;height: 1.9rem;" bind:value={bojaTackeNosa.value}  type="color" class="form-control">
+</div>
+
         {#if !running}
             <button class="btn btn-warning btn-sm" type="button" onclick={start}>▶ Start</button>
         {:else}
@@ -124,7 +129,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     <div class="converge-track">
         <div
             class="converge-dot"
-            style="width: {velicina}px; height: {velicina}px; margin-left: -{velicina / 2}px; margin-top: -{velicina / 2}px; transition-duration: {brzinaMs.value}ms;"
+            style="width: {velicina}px; height: {velicina}px; margin-left: -{velicina / 2}px; margin-top: -{velicina / 2}px; transition-duration: {brzinaMs.value}ms;background:{bojaTackeNosa.value}"
         ></div>
     </div>
 </fieldset>
@@ -144,7 +149,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
         top: 50%;
         left: 50%;
         border-radius: 50%;
-        background: #e0466b;
+       
         transition-property: width, height, margin-left, margin-top;
         transition-timing-function: ease-in-out;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
