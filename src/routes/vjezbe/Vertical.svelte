@@ -1,11 +1,13 @@
 <script>
+
+import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     // --- Vjezba zagrijavanja - tacka ide sredina -> gore -> sredina -> dolje -> sredina ---
     let position = $state(0); // -1 = gore, 0 = sredina, 1 = dolje
     let running = $state(false);
-    let brzinaMs = $state(1500);
-    let pauzaMs = $state(300);
-    let amplituda = $state(50); // koliko daleko ide gore/dolje (% od sredine)
-    let brojPonavljanja = $state('10');
+    const brzinaMs = localStore('brzinaMs', 1500);
+	const pauzaMs = localStore('pauzaMs', 300);
+	const amplituda = localStore('amplituda', 50);
+	const brojPonavljanja = localStore('brojPonavljanja', 5);
 
     let trenutniCiklus = $state(0);
     let sequenceId = 0;
@@ -19,9 +21,9 @@
         for (const step of steps) {
             if (sequenceId !== myId) return;
             position = step;
-            await delay(brzinaMs);
+            await delay(brzinaMs.value);
             if (sequenceId !== myId) return;
-            await delay(pauzaMs);
+            await delay(pauzaMs.value);
         }
     }
 
@@ -32,7 +34,7 @@
         sequenceId += 1;
         const myId = sequenceId;
 
-        const limit = brojPonavljanja === 'beskonacno' ? Infinity : parseInt(brojPonavljanja, 10);
+        const limit = brojPonavljanja === 'beskonacno' ? Infinity : parseInt(brojPonavljanja.value, 10);
 
         while (running && sequenceId === myId && trenutniCiklus < limit) {
             await runCycle(myId);
@@ -65,7 +67,7 @@
                 step="100"
                 class="form-control"
                 style="width: 80px;"
-                bind:value={brzinaMs}
+                bind:value={brzinaMs.value}
                 disabled={running}
             />
         </div>
@@ -77,13 +79,13 @@
                 step="100"
                 class="form-control"
                 style="width: 80px;"
-                bind:value={pauzaMs}
+                bind:value={pauzaMs.value}
                 disabled={running}
             />
         </div>
         <div class="input-group input-group-sm" style="width: auto;">
             <span class="input-group-text">Dokle ide</span>
-            <select class="form-select" style="width: 90px;" bind:value={amplituda} disabled={running}>
+            <select class="form-select" style="width: 90px;" bind:value={amplituda.value} disabled={running}>
                 <option value={20}>20%</option>
                 <option value={30}>30%</option>
                 <option value={40}>40%</option>
@@ -93,7 +95,7 @@
         </div>
         <div class="input-group input-group-sm" style="width: auto;">
             <span class="input-group-text">Ponavljanja</span>
-            <select class="form-select" style="width: 100px;" bind:value={brojPonavljanja} disabled={running}>
+            <select class="form-select" style="width: 100px;" bind:value={brojPonavljanja.value} disabled={running}>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="15">15</option>
@@ -112,7 +114,7 @@
 
     {#if running}
         <div class="text-center info mb-2">
-            Ciklus: {trenutniCiklus + 1}{brojPonavljanja !== 'beskonacno' ? ' / ' + brojPonavljanja : ''}
+            Ciklus: {trenutniCiklus + 1}{brojPonavljanja !== 'beskonacno' ? ' / ' + brojPonavljanja.value : ''}
         </div>
     {/if}
 
@@ -121,7 +123,7 @@
         <div class="fixation-point"></div>
         <div
             class="eye-dot-v"
-            style="top: calc(50% + {position * amplituda}% - 15px); transition-duration: {brzinaMs}ms;"
+            style="top: calc(50% + {position * amplituda.value}% - 15px); transition-duration: {brzinaMs.value}ms;"
         ></div>
     </div>
 </fieldset>

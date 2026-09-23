@@ -1,12 +1,15 @@
 <script>
+
+import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
+
     // --- Vjezba konvergencije - tacka se "priblizava" (raste) pa "udaljava" (smanjuje se) ---
     let velicina = $state(10); // trenutna velicina tacke u px
     let running = $state(false);
-    let brzinaMs = $state(1500);
-    let pauzaMs = $state(300);
-    let minVelicina = $state(10); // "daleko"
-    let maxVelicina = $state(120); // "blizu nosa"
-    let brojPonavljanja = $state('10');
+    const brzinaMs = localStore('brzinaMs', 2000);
+	const pauzaMs = localStore('pauzaMs', 300);
+	const brojPonavljanja = localStore('brojPonavljanja', 5);
+	let minVelicina = $state(10);
+	const maxVelicina = localStore('maxVelicina', 60);
 
     let trenutniCiklus = $state(0);
     let sequenceId = 0;
@@ -15,17 +18,16 @@
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    async function runCycle(myId) {
-        // Jedan krug: malo (daleko) -> veliko (blizu) -> malo (daleko)
-        const steps = [maxVelicina, minVelicina];
-        for (const step of steps) {
-            if (sequenceId !== myId) return;
-            velicina = step;
-            await delay(brzinaMs);
-            if (sequenceId !== myId) return;
-            await delay(pauzaMs);
-        }
+   async function runCycle(myId) {
+    const steps = [maxVelicina.value, minVelicina];
+    for (const step of steps) {
+        if (sequenceId !== myId) return;
+        velicina = step;
+        await delay(brzinaMs.value);   // ✅
+        if (sequenceId !== myId) return;
+        await delay(pauzaMs.value);    // ✅
     }
+}
 
     async function start() {
         if (running) return;
@@ -35,7 +37,7 @@
         const myId = sequenceId;
         velicina = minVelicina;
 
-        const limit = brojPonavljanja === 'beskonacno' ? Infinity : parseInt(brojPonavljanja, 10);
+        const limit = brojPonavljanja === 'beskonacno' ? Infinity : parseInt(brojPonavljanja.value, 10);
 
         while (running && sequenceId === myId && trenutniCiklus < limit) {
             await runCycle(myId);
@@ -68,7 +70,7 @@
                 step="100"
                 class="form-control"
                 style="width: 80px;"
-                bind:value={brzinaMs}
+                bind:value={brzinaMs.value}
                 disabled={running}
             />
         </div>
@@ -80,13 +82,13 @@
                 step="100"
                 class="form-control"
                 style="width: 80px;"
-                bind:value={pauzaMs}
+                bind:value={pauzaMs.value}
                 disabled={running}
             />
         </div>
         <div class="input-group input-group-sm" style="width: auto;">
             <span class="input-group-text">Max velicina (px)</span>
-            <select class="form-select" style="width: 90px;" bind:value={maxVelicina} disabled={running}>
+            <select class="form-select" style="width: 90px;" bind:value={maxVelicina.value} disabled={running}>
                 <option value={60}>60</option>
                 <option value={90}>90</option>
                 <option value={120}>120</option>
@@ -96,7 +98,7 @@
         </div>
         <div class="input-group input-group-sm" style="width: auto;">
             <span class="input-group-text">Ponavljanja</span>
-            <select class="form-select" style="width: 100px;" bind:value={brojPonavljanja} disabled={running}>
+            <select class="form-select" style="width: 100px;" bind:value={brojPonavljanja.value} disabled={running}>
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="15">15</option>
@@ -115,14 +117,14 @@
 
     {#if running}
         <div class="text-center info mb-2">
-            Ciklus: {trenutniCiklus + 1}{brojPonavljanja !== 'beskonacno' ? ' / ' + brojPonavljanja : ''}
+            Ciklus: {trenutniCiklus + 1}{brojPonavljanja !== 'beskonacno' ? ' / ' + brojPonavljanja.value : ''}
         </div>
     {/if}
 
     <div class="converge-track">
         <div
             class="converge-dot"
-            style="width: {velicina}px; height: {velicina}px; margin-left: -{velicina / 2}px; margin-top: -{velicina / 2}px; transition-duration: {brzinaMs}ms;"
+            style="width: {velicina}px; height: {velicina}px; margin-left: -{velicina / 2}px; margin-top: -{velicina / 2}px; transition-duration: {brzinaMs.value}ms;"
         ></div>
     </div>
 </fieldset>

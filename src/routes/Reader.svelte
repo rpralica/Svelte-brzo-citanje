@@ -1,6 +1,6 @@
 <script>
 /* global Swal*/
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount } from 'svelte';
     import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
     import { 
         onAuthStateChanged 

@@ -5,6 +5,8 @@
  * @param {string | Date} datumZaFormat - Datum koji se formatira
  * @returns {string} - Formatirani datum
  */
+
+import { onMount } from 'svelte';
 export function nasDatum(datumZaFormat) {
 	if (!datumZaFormat) return '';
 
@@ -97,7 +99,6 @@ export function sortirajPo(niz, kljuc, opadajuce = false) {
 	});
 }
 
-
 //Validacija inputa
 /*
 Primjer upotrebe
@@ -117,7 +118,6 @@ Primjer upotrebe
 </script>
 
 */
-
 
 export function isEmail(value) {
 	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -143,4 +143,42 @@ export function isLengthBetween(value, min, max) {
 export function isPhoneNumber(value) {
 	// adjust the regex to match the phone format you need (e.g. BiH numbers)
 	return /^[+]?[0-9\s\-()]{6,20}$/.test(value);
+}
+
+
+
+
+//Localstorage
+
+
+export function localStore(kljuc, pocetnaVrijednost) {
+	let vrijednost = $state(pocetnaVrijednost);
+
+	onMount(() => {
+		try {
+			const sacuvano = localStorage.getItem(kljuc);
+			if (sacuvano !== null) {
+				vrijednost = JSON.parse(sacuvano);
+			}
+		} catch {
+			vrijednost = pocetnaVrijednost;
+		}
+	});
+
+	$effect(() => {
+		try {
+			localStorage.setItem(kljuc, JSON.stringify(vrijednost));
+		} catch (e) {
+			console.warn('localStorage greška:', e);
+		}
+	});
+
+	return {
+		get value() {
+			return vrijednost;
+		},
+		set value(nova) {
+			vrijednost = nova;
+		}
+	};
 }

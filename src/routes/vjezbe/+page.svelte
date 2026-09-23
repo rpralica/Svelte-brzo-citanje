@@ -3,7 +3,7 @@
 	import Vertical from './Vertical.svelte';
 	import Konvergencija from './Nos.svelte';
 	import Shulte from './Shulte.svelte';
-
+import Tahitoskop from './Tahitoskop.svelte';
 	let aktivnaVjezba = $state('horizontal');
 </script>
 
@@ -33,8 +33,16 @@
 			<button
 				class="btn {aktivnaVjezba === 'shulte' ? 'btn-info' : 'btn-white'}"
 				type="button"
-				onclick={() => (aktivnaVjezba = 'shulte')}>Shulte</button
-			>
+				onclick={() => (aktivnaVjezba = 'shulte')}>Shulte</button>
+
+<button
+				class="btn {aktivnaVjezba === 'tahitoskop' ? 'btn-info' : 'btn-white'}"
+				type="button"
+				onclick={() => (aktivnaVjezba = 'tahitoskop')}>Tahitoskop</button>
+
+
+
+
 		</div>
 	</div>
 
@@ -46,5 +54,8 @@
 		<Konvergencija />
 	{:else if aktivnaVjezba === 'shulte'}
 		<Shulte />
+{:else if aktivnaVjezba === 'tahitoskop'}
+		<Tahitoskop />
+
 	{/if}
 </div>
