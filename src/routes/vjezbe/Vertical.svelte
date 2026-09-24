@@ -10,7 +10,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
 	const brojPonavljanja = localStore('brojPonavljanja', 5);
       const bojaKrugaVert = localStore('bojaKrugaVert', '#46b2e0');
       const bojaTackeVert = localStore('bojaTackeVert', '#000000');
-
+let scrCenter=$state(null);
 
     let trenutniCiklus = $state(0);
     let sequenceId = 0;
@@ -31,6 +31,8 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     }
 
     async function start() {
+        scrCenter.scrollIntoView({ behavior: 'smooth', block: 'start' });
+       
         if (running) return;
         running = true;
         trenutniCiklus = 0;
@@ -58,7 +60,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     }
 </script>
 
-<fieldset class="border p-3 rounded mt-3 shadow-lg">
+<fieldset  bind:this={scrCenter} class="border p-3 rounded mt-3 shadow-lg">
     <legend class="text-center text-success fw-bold fst-italic">Zagrijavanje - pokreti oka (vertikalno)</legend>
 
     <div class="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
