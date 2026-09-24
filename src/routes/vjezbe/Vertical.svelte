@@ -1,5 +1,7 @@
 <script>
 
+
+import { tick } from 'svelte';
 import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     // --- Vjezba zagrijavanja - tacka ide sredina -> gore -> sredina -> dolje -> sredina ---
     let position = $state(0); // -1 = gore, 0 = sredina, 1 = dolje
@@ -30,16 +32,22 @@ let scrCenter=$state(null);
         }
     }
 
-    async function start() {
-        window.scrollTo(0, document.body.scrollHeight);
-       
+     async function start() {
         if (running) return;
         running = true;
         trenutniCiklus = 0;
         sequenceId += 1;
         const myId = sequenceId;
 
-        const limit = brojPonavljanja === 'beskonacno' ? Infinity : parseInt(brojPonavljanja.value, 10);
+        // POPRAVAK SKROLANJA: Čekamo da Svelte postavi stanje 'running' i ažurira sučelje
+        await tick();
+        if (scrCenter) {
+            // Skrola ekran tako da dno ovog fieldset elementa bude točno na dnu ekrana
+            scrCenter.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        // Popravljena provjera: brojPonavljanja.value umjesto cijelog objekta
+        const limit = brojPonavljanja.value === 'beskonacno' ? Infinity : parseInt(brojPonavljanja.value, 10);
 
         while (running && sequenceId === myId && trenutniCiklus < limit) {
             await runCycle(myId);
