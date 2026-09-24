@@ -210,12 +210,12 @@
     }
 </script>
 
-<h1 class="text-center mb-3">Tachistoscope</h1>
+<h1 class="text-center mb-3 shadow-lg rounded">Tachistoscope</h1>
 <div class="d-flex justify-content-center ">
-<div  class="tachistoscope-wrap p-3 border rounded bg-light overflow-hidden ">
+<div  class="tachistoscope-wrap p-3 border rounded bg-light overflow-hidden shadow-lg">
     <!-- Podešavanja (prikazuje se kad vježba ne traje) -->
     {#if !isRunning}
-        <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded flex-wrap gap-2">
+        <div class="mb-3 d-flex justify-content-around bg-white p-2 border rounded flex-wrap gap-2 shadow-lg">
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="tMode" id="modeText" value="text" bind:group={mode} />
                 <label class="form-check-label fw-bold" for="modeText">Tekst</label>
@@ -351,10 +351,10 @@
     <!-- Dugmad za Start / Stop -->
     <div class="d-flex gap-2 justify-content-center flex-wrap">
         {#if !isRunning}
-            <button class="btn btn-primary flex-fill py-2 fw-bold" onclick={startTachistoscope}>
+            <button class="btn btn-outline-info text-dark flex-fill py-2 fw-bold" onclick={startTachistoscope}>
                 {sessionFinished ? '🚀 Nova igra (Takmičarski)' : '🚀 Start (Takmičarski)'}
             </button>
-            <button class="btn btn-success flex-fill py-2 fw-bold" onclick={startPracticeMode}>
+            <button class="btn btn-outline-warning text-dark flex-fill py-2 fw-bold" onclick={startPracticeMode}>
                 {sessionFinished ? '🟢 Nova igra (Practice)' : '🟢 Practice Start'}
             </button>
         {:else}

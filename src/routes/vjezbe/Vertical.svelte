@@ -58,7 +58,7 @@ import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
     }
 </script>
 
-<fieldset class="border p-3 rounded mt-3">
+<fieldset class="border p-3 rounded mt-3 shadow-lg">
     <legend class="text-center text-success fw-bold fst-italic">Zagrijavanje - pokreti oka (vertikalno)</legend>
 
     <div class="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">

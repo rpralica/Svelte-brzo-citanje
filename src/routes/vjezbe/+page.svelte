@@ -11,32 +11,32 @@ import Tahitoskop from './Tahitoskop.svelte';
 	<title>Brzo Čitanje</title>
 </svelte:head>
 
-<div class="container py-3">
+<div class="container py-3 shadow-lg rounded">
 	<div class="d-flex justify-content-center mb-3">
-		<div class="btn-group" role="group">
+		<div class="btn-group shadow-lg " role="group">
 			<button
-				class="btn {aktivnaVjezba === 'horizontal' ? 'btn-info' : 'btn-white'}"
+				class="btn fw-bold   {aktivnaVjezba === 'horizontal' ? 'btn-info' : 'btn-white'}"
 				type="button"
 				onclick={() => (aktivnaVjezba = 'horizontal')}>Horizontalno</button
 			>
 			<button
-				class="btn {aktivnaVjezba === 'vertikalno' ? 'btn-info' : 'btn-white'}"
+				class="btn fw-bold  {aktivnaVjezba === 'vertikalno' ? 'btn-info' : 'btn-white'}"
 				type="button"
 				onclick={() => (aktivnaVjezba = 'vertikalno')}>Vertikalno</button
 			>
 			<button
-				class="btn {aktivnaVjezba === 'konvergencija' ? 'btn-info' : 'btn-white'}"
+				class="btn fw-bold  {aktivnaVjezba === 'konvergencija' ? 'btn-info' : 'btn-white'}"
 				type="button"
 				onclick={() => (aktivnaVjezba = 'konvergencija')}>Konvergencija</button
 			>
 
 			<button
-				class="btn {aktivnaVjezba === 'shulte' ? 'btn-info' : 'btn-white'}"
+				class="btn fw-bold  {aktivnaVjezba === 'shulte' ? 'btn-info' : 'btn-white'}"
 				type="button"
 				onclick={() => (aktivnaVjezba = 'shulte')}>Shulte</button>
 
 <button
-				class="btn {aktivnaVjezba === 'tahitoskop' ? 'btn-info' : 'btn-white'}"
+				class="btn fw-bold  {aktivnaVjezba === 'tahitoskop' ? 'btn-info' : 'btn-white'}"
 				type="button"
 				onclick={() => (aktivnaVjezba = 'tahitoskop')}>Tahitoskop</button>
 
