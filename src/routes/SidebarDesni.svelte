@@ -1,5 +1,5 @@
 <script>
-    import Wpm from './Wpm.svelte';
+    import Wpm from './Wpmracun.svelte';
 
   let {clearTa}=$props();
    
@@ -21,7 +21,7 @@
 
 <!-- Offcanvas - desno, otvara se prema lijevo (novi ID da nema konflikta sa starim kešom) -->
 <div
-    class="offcanvas offcanvas-end"
+    class="offcanvas offcanvas-end w-50"
     data-bs-scroll="true"
     data-bs-backdrop="false"
     tabindex="-1"

@@ -62,7 +62,7 @@
 </script>
 
 <fieldset class="border p-3 rounded mt-3 shadow-lg">
-	<legend class="text-center text-success fw-bold fst-italic">Zagrijavanje - pokreti oka</legend>
+	<legend class="text-center text-success fw-bold fst-italic">Zagrijavanje - pokreti oka (horizontalno)</legend>
 
 	<div bind:this={scrCenter} class="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
 		<div class="input-group input-group-sm" style="width: auto;">
