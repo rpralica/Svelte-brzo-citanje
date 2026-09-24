@@ -31,7 +31,7 @@ let scrCenter=$state(null);
     }
 
     async function start() {
-        scrCenter.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo(0, document.body.scrollHeight);
        
         if (running) return;
         running = true;
