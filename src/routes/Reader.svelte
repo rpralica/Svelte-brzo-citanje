@@ -1,3 +1,4 @@
+
 <script>
 /* global Swal*/
     import { onMount } from 'svelte';
@@ -13,7 +14,7 @@
 
 //Podešavanje
 let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
-
+let marginClipEnabled=$state(false);
     // --- Korisnik / Auth ---
     let currentUser = $state(null);
 
@@ -75,6 +76,7 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
                 const data = snap.data();
                 if (data.reader_font) fontSize = data.reader_font;
                 if (data.reader_sirina) readerWidthPercent = data.reader_sirina;
+                if (data.margin_clip_enabled !== undefined) marginClipEnabled = data.margin_clip_enabled;
                 if (data.pace_wpm) paceWpm = data.pace_wpm;
                 if (data.margin_left !== undefined) marginLeftPercent = data.margin_left;
                 if (data.margin_right !== undefined) marginRightPercent = data.margin_right;
@@ -129,6 +131,12 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
     const MARGIN_MIN = 0;
     const MARGIN_MAX = 40;
     const MARGIN_STEP = 2;
+
+function toggleMarginClip() {
+    marginClipEnabled = !marginClipEnabled;
+    saveSettingToFirebase('margin_clip_enabled', marginClipEnabled);
+}
+
 
     function toggleMarginLines() {
         marginLinesEnabled = !marginLinesEnabled;
@@ -825,7 +833,20 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
                         <label class="form-check-label small" for="marginLinesToggle">Margine</label>
                     </div>
                 </div>
-
+<div class="toolbar-group d-flex align-items-center gap-2">
+    <div class="form-check form-switch mb-0">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="marginClipToggle"
+            checked={marginClipEnabled}
+            onchange={toggleMarginClip}
+            disabled={!marginLinesEnabled}
+        />
+        <label class="form-check-label small" for="marginClipToggle">Odsijeci tekst</label>
+    </div>
+</div>
                 <div class="toolbar-group d-flex align-items-center gap-2">
                     <span class="fw-bold small">Lijeva</span>
                     <div class="btn-group btn-group-sm" role="group">
@@ -1040,7 +1061,10 @@ let {changeColor ,marginDebljina , pastedText=$bindable(),clearTa} =$props();
         </div>
     {/if}
 
-    <div class="reader-content-wrap" style="width: {readerWidthPercent}%; margin: 0 auto;">
+    <div
+    class="reader-content-wrap"
+    style="width: {readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled && marginClipEnabled ? `inset(0 ${marginRightPercent}% 0 ${marginLeftPercent}%)` : 'none'};"
+>
      {#if marginLinesEnabled}
             <div class="margin-line"  style=" left: {marginLeftPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
             <div class="margin-line"  style=" right: {marginRightPercent}%;background:{changeColor};width:{marginDebljina}px;"></div>
