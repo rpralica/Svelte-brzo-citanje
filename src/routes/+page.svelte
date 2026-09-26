@@ -7,6 +7,7 @@
 	const PACER_KEY = 'pacer_color';
 	const MARGIN_KEY = 'margin_debljina';
 	const COLOR_KEY = 'margin_boja';
+    const CHUNK_KEY='chunk_size'
 
 	let marginDebljina = $state(
 		typeof localStorage !== 'undefined' && localStorage.getItem(MARGIN_KEY) !== null
@@ -22,16 +23,15 @@
 	let pacerColor = $state(
 		typeof localStorage !== 'undefined' && localStorage.getItem(PACER_KEY) !== null
 			? localStorage.getItem(PACER_KEY)
-			: '#ffa8a8'
+			: '#0dcaf0'
 	);
+	let paceChunkSize = $state(
+    typeof localStorage !== 'undefined' && localStorage.getItem(CHUNK_KEY) !== null
+        ? Number(localStorage.getItem(CHUNK_KEY)) // <--- OVDE JE BILA GREŠKA (vraćalo string)
+        : 2
+);
 
 	
-  function clearTa() {
-        pastedText = '';
-    }
-
-	let pastedText=$state('');
-
 
 	// Automatski snimi svaki put kad se bilo koja od ove dvije vrijednosti promijeni,
 	// bez obzira odakle je promjena stigla (Sidebar preko bind:, ili bilo ko drugi)
@@ -45,18 +45,28 @@
 		localStorage.setItem(PACER_KEY, pacerColor);
 		 document.documentElement.style.setProperty('--pace-mark-color', pacerColor);
 	});
+
+	$effect(() => {
+	
+		localStorage.setItem(CHUNK_KEY, paceChunkSize);
+	});
+	let pastedText=$state('');
+	 function clearTa() {
+        pastedText = '';
+    }
+
 </script>
 
 <svelte:head>
 	<title>Brzo Čitanje</title>
 </svelte:head>
 
-<Sidebar bind:marginDebljina bind:changeColor bind:pacerColor />
+<Sidebar bind:marginDebljina bind:changeColor bind:pacerColor bind:paceChunkSize />
 
 <SidebarDesni {clearTa}></SidebarDesni>
 
 <div class="d-flex justify-content-center container">
-	<Reader {marginDebljina} {changeColor} {pacerColor} {clearTa} bind:pastedText />
+	<Reader {marginDebljina} {changeColor} {pacerColor} {clearTa} bind:pastedText {paceChunkSize} />
 </div>
 
 <style>

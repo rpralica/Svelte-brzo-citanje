@@ -9,57 +9,57 @@
 	let countdownIntervalId = null;
 	let hasStarted = $state(false); // false = jos nije pokrenut, prikaz prati inpute uzivo
 
-	let { marginDebljina = $bindable(), changeColor = $bindable() , pacerColor= $bindable() } = $props();
+	let {
+		marginDebljina = $bindable(),
+		changeColor = $bindable(),
+		pacerColor = $bindable(),
+		paceChunkSize = $bindable()
+	} = $props();
 
-async function resetMargin() {
-    const result = await Swal.fire({
-        title: 'Resetovati margine?',
-        text: 'Vratiti debljinu i boju na podrazumijevane vrijednosti?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Da, resetuj',
-        cancelButtonText: 'Otkazi'
-    });
+	async function resetMargin() {
+		const result = await Swal.fire({
+			title: 'Resetovati margine?',
+			text: 'Vratiti debljinu i boju na podrazumijevane vrijednosti?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: 'Da, resetuj',
+			cancelButtonText: 'Otkazi'
+		});
 
-    if (result.isConfirmed) {
-        marginDebljina = 1;
-        changeColor = '#46b2e0';
+		if (result.isConfirmed) {
+			marginDebljina = 1;
+			changeColor = '#46b2e0';
 
-        Swal.fire({
-            title: 'Resetovano!',
-            icon: 'success',
-            timer: 1000,
-            showConfirmButton: false
-        });
-    }
-}
+			Swal.fire({
+				title: 'Resetovano!',
+				icon: 'success',
+				timer: 1000,
+				showConfirmButton: false
+			});
+		}
+	}
 
+	async function resetPacer() {
+		const result = await Swal.fire({
+			title: 'Resetovati boju pacera ?',
+			text: 'Vratiti  boju na default ?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: 'Da, resetuj',
+			cancelButtonText: 'Otkazi'
+		});
 
-async function resetPacer() {
-    const result = await Swal.fire({
-        title: 'Resetovati boju pacera ?',
-        text: 'Vratiti  boju na default ?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Da, resetuj',
-        cancelButtonText: 'Otkazi'
-    });
-
-    if (result.isConfirmed) {
-      
-        pacerColor='#ffa8a8';
-
-        Swal.fire({
-            title: 'Resetovano!',
-            icon: 'success',
-            timer: 1000,
-            showConfirmButton: false
-        });
-    }
-}
-
-
-
+		if (result.isConfirmed) {
+			pacerColor = '#0dcaf0';
+			paceChunkSize = 2;
+			Swal.fire({
+				title: 'Resetovano!',
+				icon: 'success',
+				timer: 1000,
+				showConfirmButton: false
+			});
+		}
+	}
 
 	function formatTime(totalSeconds) {
 		const m = Math.floor(totalSeconds / 60);
@@ -70,9 +70,6 @@ async function resetPacer() {
 	}
 
 	let countdownDisplay = $derived(formatTime(remaining));
-
-
-
 
 	function readCountdownInputs() {
 		let m = Number(minutesInput);
@@ -157,7 +154,7 @@ async function resetPacer() {
 
 <!-- Uski fiksni sidebar - uvijek vidljiv, brzi pristup tajmerima -->
 <div class="quick-timer-strip">
-	<div class="qt-block">
+	<div class="qt-block border border-primary">
 		<div class="qt-label">Countdown</div>
 		<div class="qt-display">{countdownDisplay}</div>
 		<div class="qt-buttons">
@@ -201,7 +198,7 @@ async function resetPacer() {
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body container">
-		<fieldset class="border p-3 rounded">
+		<fieldset class="border p-3 rounded border border-primary">
 			<legend class="px-2 fw-bold text-primary text-center">Countdown</legend>
 			<div class="row">
 				<div class="col-6">
@@ -238,7 +235,7 @@ async function resetPacer() {
 			</div>
 		</fieldset>
 
-		<fieldset class="border p-3 rounded mt-2">
+		<fieldset class="border border-success p-3 rounded mt-2">
 			<legend class="text-center fw-bold text-danger">Margine</legend>
 
 			<div class="toolbar-group d-flex align-items-center gap-2">
@@ -267,15 +264,14 @@ async function resetPacer() {
 				</div>
 			</div>
 			<div class="container d-flex justify-content-center">
-				<button onclick={resetMargin} class="btn btn-sm btn-outline-danger  mt-3">Reset</button>
+				<button onclick={resetMargin} class="btn btn-sm btn-outline-danger mt-3">Reset</button>
 			</div>
 		</fieldset>
 
+		<!-- PACER -->
 
-		<fieldset class="border p-3 rounded mt-2">
-			<legend class="text-center fw-bold  text-info-emphasis ">Pacer</legend>
-
-		
+		<fieldset class="border border-danger p-3 rounded mt-2">
+			<legend class="text-center fw-bold text-info-emphasis">Pacer</legend>
 
 			<div class="container-fluid">
 				<div class="row mt-2">
@@ -285,6 +281,23 @@ async function resetPacer() {
 					<div class="col-10">
 						<input bind:value={pacerColor} type="color" class="w-25 form-control" />
 					</div>
+				</div>
+				<div class="row">
+					<div class="col-2">
+						<label for="username" class="form-label fw-bold mt-3">Chunk</label>
+					</div>
+					<!-- Label vezan preko 'for' atributa za ID inputa -->
+
+					<div class="col-10">
+						<input
+							type="number"
+							id="username"
+							min="1"
+							class="form-control w-25 fw-bold mt-2"
+							bind:value={paceChunkSize}
+						/>
+					</div>
+					<!-- Input sa bindovanim stanjem -->
 				</div>
 			</div>
 			<div class="container d-flex justify-content-center">

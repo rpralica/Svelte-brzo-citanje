@@ -6,7 +6,7 @@
 	import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 	//Podešavanje
-	let { changeColor, marginDebljina, pastedText = $bindable(), clearTa } = $props();
+	let { changeColor, marginDebljina, pastedText = $bindable(), clearTa,paceChunkSize=$bindable() } = $props();
 	let marginClipEnabled = $state(false);
 	// --- Korisnik / Auth ---
 	let currentUser = $state(null);
@@ -464,7 +464,6 @@
 
 	// --- Pacer ---
 	let paceWpm = $state(300);
-	let paceChunkSize = $state(2);
 	let paceActive = $state(false);
 	let paceIndex = $state(0);
 	let paceIntervalId = null;
