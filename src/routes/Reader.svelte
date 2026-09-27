@@ -6,7 +6,7 @@
 	import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 	//Podešavanje
-	let { changeColor, marginDebljina, pastedText = $bindable(), clearTa,paceChunkSize=$bindable() } = $props();
+	let { changeColor, marginDebljina, pastedText = $bindable(), clearTa,paceChunkSize } = $props();
 	let marginClipEnabled = $state(false);
 	// --- Korisnik / Auth ---
 	let currentUser = $state(null);
@@ -1105,12 +1105,8 @@ function pauseSession() {
 							/>
 						</div>
 						<div class="input-group input-group-sm" style="width: auto;">
-							<span class="input-group-text">Grupa riječi</span>
-							<select class="form-select" style="width: 65px;" bind:value={paceChunkSize}>
-								{#each Array.from({ length: 10 }, (_, k) => k + 1) as n}
-									<option value={n}>{n}</option>
-								{/each}
-							</select>
+							<span class="input-group-text">Chunks</span>
+							<label class="fw-bold m-1" for="">{paceChunkSize}</label>
 						</div>
 						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
 							>🎯 Start Pacer</button

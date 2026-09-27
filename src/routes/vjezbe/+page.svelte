@@ -4,6 +4,7 @@
     import Konvergencija from './Nos.svelte';
     import Shulte from './Shulte.svelte';
     import Tahitoskop from './Tahitoskop.svelte';
+	import Rsvp from './Rsvp.svelte';
     let aktivnaVjezba = $state('horizontal');
 
     // Mapa naziva za trenutno izabranu vježbu da se vidi na dugmetu
@@ -39,6 +40,8 @@
                 <li><button class="dropdown-item fw-bold {aktivnaVjezba === 'konvergencija' ? 'active' : ''}" type="button" onclick={() => (aktivnaVjezba = 'konvergencija')}>Konvergencija</button></li>
                 <li><button class="dropdown-item fw-bold {aktivnaVjezba === 'shulte' ? 'active' : ''}" type="button" onclick={() => (aktivnaVjezba = 'shulte')}>Shulte</button></li>
                 <li><button class="dropdown-item fw-bold {aktivnaVjezba === 'tahitoskop' ? 'active' : ''}" type="button" onclick={() => (aktivnaVjezba = 'tahitoskop')}>Tahitoskop</button></li>
+                <li><button class="dropdown-item fw-bold {aktivnaVjezba === 'rsvp' ? 'active' : ''}" type="button" onclick={() => (aktivnaVjezba = 'rsvp')}>RSVP</button></li>
+
             </ul>
         </div>
 
@@ -69,6 +72,13 @@
                 type="button"
                 onclick={() => (aktivnaVjezba = 'tahitoskop')}>Tahitoskop</button
             >
+ <button
+                class="btn fw-bold {aktivnaVjezba === 'rsvp' ? 'btn-info' : 'btn-white'}"
+                type="button"
+                onclick={() => (aktivnaVjezba = 'rsvp')}>RSVP</button
+            >
+
+
         </div>
     </div>
 
@@ -83,5 +93,7 @@
         <Shulte />
     {:else if aktivnaVjezba === 'tahitoskop'}
         <Tahitoskop />
+ {:else if aktivnaVjezba === 'rsvp'}
+<Rsvp/>
     {/if}
 </div>
