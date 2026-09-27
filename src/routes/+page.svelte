@@ -51,9 +51,7 @@
 		localStorage.setItem(CHUNK_KEY, paceChunkSize);
 	});
 	let pastedText=$state('');
-	 function clearTa() {
-        pastedText = '';
-    }
+
 
 </script>
 
@@ -63,10 +61,10 @@
 
 <Sidebar bind:marginDebljina bind:changeColor bind:pacerColor bind:paceChunkSize />
 
-<SidebarDesni {clearTa}></SidebarDesni>
+<SidebarDesni></SidebarDesni>
 
 <div class="d-flex justify-content-center container">
-	<Reader {marginDebljina} {changeColor} {pacerColor} {clearTa} bind:pastedText {paceChunkSize} />
+	<Reader {marginDebljina} {changeColor} {pacerColor}   {paceChunkSize} />
 </div>
 
 <style>

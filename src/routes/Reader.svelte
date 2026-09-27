@@ -6,13 +6,13 @@
 	import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 	//Podešavanje
-	let { changeColor, marginDebljina, pastedText = $bindable(), clearTa,paceChunkSize } = $props();
+	let { changeColor, marginDebljina,paceChunkSize } = $props();
 	let marginClipEnabled = $state(false);
 	// --- Korisnik / Auth ---
 	let currentUser = $state(null);
 	let paceAutoNext = $state(false);
 	let paceAutoNextTimeoutId = null;
-
+let pastedText=$state('');
 	function togglePaceAutoNext() {
 		paceAutoNext = !paceAutoNext;
 		saveSettingToFirebase('pace_auto_next', paceAutoNext);
@@ -943,11 +943,14 @@ function pauseSession() {
 					{:else}
 						<button class="btn btn-danger btn-sm" type="button" onclick={stopTaRace}>⏹ Stop</button>
 					{/if}
+					<button class="btn btn-info btn-sm" type="button" onclick={()=>pastedText=''}
+							> 🎯 Clear</button>
+						
 				</div>
+
+			
 			</div>
-			<button onclick={clearTa} style="width: 7rem;" class="btn btn-danger ms-auto mb-2 me-2"
-				>Clear</button
-			>
+
 		</div>
 	{/if}
 

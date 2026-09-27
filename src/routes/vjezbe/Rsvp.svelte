@@ -94,7 +94,7 @@
 			<div class="row">
 				<div class="small text-muted mt-1 col">Rijeci: {words.length}</div>
 				<div class="col-1">
-					<button onclick={() => (inputText = '')} class="btn btn-danger">Clear</button>
+					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2">🎯 Clear</button>
 				</div>
 			</div>
 		</div>
