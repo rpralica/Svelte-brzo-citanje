@@ -251,96 +251,113 @@
 	}
 
 	// --- Učitavanje .pdf ---
-	let pdfjsLib = null;
+	// --- Učitavanje .pdf sa robusnom greškom ---
+    let pdfjsLib = null;
 
-	async function ensurePdfJs() {
-		if (pdfjsLib) return pdfjsLib;
-		pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
-		pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-			'pdfjs-dist/build/pdf.worker.mjs',
-			import.meta.url
-		).toString();
-		return pdfjsLib;
-	}
+    async function ensurePdfJs() {
+        if (pdfjsLib) return pdfjsLib;
+        pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+            'pdfjs-dist/build/pdf.worker.mjs',
+            import.meta.url
+        ).toString();
+        return pdfjsLib;
+    }
 
-	let pagesWordsCache = [];
-	let searchReady = $state(false);
-	let preparingSearch = $state(false);
+    let pagesWordsCache = [];
+    let searchReady = $state(false);
+    let preparingSearch = $state(false);
 
-	async function loadPdfFile(file) {
-		const lib = await ensurePdfJs();
-		const arrayBuffer = await file.arrayBuffer();
-		pdfDoc = await lib.getDocument({ data: arrayBuffer }).promise;
-		totalPages = pdfDoc.numPages;
-		currentFileName = file.name;
-		currentPage = 1;
-		posIndex = null;
-		startIndex = null;
-		endIndex = null;
-		pagesWordsCache = [];
-		searchReady = false;
-		searchResults = [];
-		searchQuery = '';
-		totalWordsInDoc = 0;
-		raceActive = false;
-		raceStats = [];
-		raceCheckpoints = [];
-		stopPacer();
-		isPaused = false;
+    async function loadPdfFile(file) {
+        try {
+            const lib = await ensurePdfJs();
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDoc = await lib.getDocument({ data: arrayBuffer }).promise;
+            totalPages = pdfDoc.numPages;
+            currentFileName = file.name;
+            currentPage = 1;
+            posIndex = null;
+            startIndex = null;
+            endIndex = null;
+            pagesWordsCache = [];
+            searchReady = false;
+            searchResults = [];
+            searchQuery = '';
+            totalWordsInDoc = 0;
+            raceActive = false;
+            raceStats = [];
+            raceCheckpoints = [];
+            stopPacer();
+            isPaused = false;
 
-		let targetPage = 1;
+            let targetPage = 1;
+            const safeKey = sanitizeKey(currentFileName);
+            const positions = getSavedPositions();
+            if (positions[safeKey] !== undefined) {
+                targetPage = parseInt(positions[safeKey], 10);
+            }
 
-		const safeKey = sanitizeKey(currentFileName);
-		const positions = getSavedPositions();
-		if (positions[safeKey] !== undefined) {
-			targetPage = parseInt(positions[safeKey], 10);
-		}
+            await renderPdfPage(targetPage);
 
-		await renderPdfPage(targetPage);
+            preparingSearch = true;
+            extractAllPages().then(() => {
+                preparingSearch = false;
+                searchReady = true;
+                totalWordsInDoc = pagesWordsCache.reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+            }).catch((err) => {
+                preparingSearch = false;
+                console.error('Greška pri pozadinskoj ekstrakciji stranica:', err);
+            });
+        } catch (e) {
+            console.error('Greška pri učitavanju PDF-a:', e);
+            Swal.fire('Greška', 'Neuspješno učitavanje PDF fajla. Fajl je možda oštećen ili neispravnog formata.', 'error');
+            closePdf();
+        }
+    }
 
-		preparingSearch = true;
-		extractAllPages().then(() => {
-			preparingSearch = false;
-			searchReady = true;
-			totalWordsInDoc = pagesWordsCache.reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
-		});
-	}
+    async function extractAllPages() {
+        try {
+            for (let p = 1; p <= totalPages; p++) {
+                if (pagesWordsCache[p - 1]) continue;
+                const page = await pdfDoc.getPage(p);
+                const textContent = await page.getTextContent();
+                const rawText = textContent.items.map((item) => item.str).join(' ');
+                const cleaned = rawText.replace(/\s+/g, ' ').trim();
+                pagesWordsCache[p - 1] = splitToWords(cleaned);
+            }
+        } catch (e) {
+            console.error('Greška pri ekstrakciji stranica u pozadini:', e);
+        }
+    }
 
-	async function extractAllPages() {
-		for (let p = 1; p <= totalPages; p++) {
-			if (pagesWordsCache[p - 1]) continue;
-			const page = await pdfDoc.getPage(p);
-			const textContent = await page.getTextContent();
-			const rawText = textContent.items.map((item) => item.str).join(' ');
-			const cleaned = rawText.replace(/\s+/g, ' ').trim();
-			pagesWordsCache[p - 1] = splitToWords(cleaned);
-		}
-	}
+    async function renderPdfPage(pageNum) {
+        try {
+            if (!pdfDoc) return;
+            if (pageNum < 1) pageNum = 1;
+            if (pageNum > totalPages) pageNum = totalPages;
+            currentPage = pageNum;
 
-	async function renderPdfPage(pageNum) {
-		if (!pdfDoc) return;
-		if (pageNum < 1) pageNum = 1;
-		if (pageNum > totalPages) pageNum = totalPages;
-		currentPage = pageNum;
+            if (pagesWordsCache[pageNum - 1]) {
+                words = pagesWordsCache[pageNum - 1];
+            } else {
+                const page = await pdfDoc.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                const rawText = textContent.items.map((item) => item.str).join(' ');
+                const cleaned = rawText.replace(/\s+/g, ' ').trim();
+                words = splitToWords(cleaned);
+                pagesWordsCache[pageNum - 1] = words;
+            }
+            posIndex = null;
+            startIndex = null;
+            endIndex = null;
 
-		if (pagesWordsCache[pageNum - 1]) {
-			words = pagesWordsCache[pageNum - 1];
-		} else {
-			const page = await pdfDoc.getPage(pageNum);
-			const textContent = await page.getTextContent();
-			const rawText = textContent.items.map((item) => item.str).join(' ');
-			const cleaned = rawText.replace(/\s+/g, ' ').trim();
-			words = splitToWords(cleaned);
-			pagesWordsCache[pageNum - 1] = words;
-		}
-		posIndex = null;
-		startIndex = null;
-		endIndex = null;
-
-		// Auto-save pozicije pri svakom okretanju stranice
-		savePositionQuietly();
-	}
-
+            // Auto-save pozicije pri svakom okretanju stranice
+            savePositionQuietly();
+        } catch (e) {
+            console.error('Greška pri renderovanju stranice:', e);
+            Swal.fire('Greška', 'Došlo je do problema pri čitanju ove stranice.', 'error');
+        }
+    }
 	// --- Race ---
 	let raceActive = $state(false);
 	let raceStats = $state([]);
