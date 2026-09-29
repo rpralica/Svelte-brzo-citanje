@@ -1,9 +1,16 @@
 <script>
 	/* global Swal*/
 	import { onMount } from 'svelte';
-import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_STEP,WIDTH_STEP } from '$lib/functionsHelper/settings.svelte.js';
+	import {
+		podesavanja,
+		changeMarginLeft,
+		changeMarginRight,
+		changeWidth,
+		MARGIN_STEP,
+		WIDTH_STEP
+	} from '$lib/functionsHelper/settings.svelte.js';
 	//Podešavanje
-	
+
 	let marginClipEnabled = $state(false);
 	let paceAutoNext = $state(false);
 	let paceAutoNextTimeoutId = null;
@@ -86,8 +93,6 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 	}
 
 	// --- Font / zoom ---
-	
-	
 
 	let raceAverageWpm = $derived.by(() => {
 		if (raceStats.length === 0) return 0;
@@ -97,18 +102,8 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 		return totalMinutes > 0 ? Math.floor(totalWords / totalMinutes) : 0;
 	});
 
-	
-
-	// --- Sirina reader-content diva ---
-	
-
-	
-
 	// --- Vodilice (margine) ---
 	let marginLinesEnabled = $state(false);
-	
-
-	
 
 	function toggleMarginClip() {
 		marginClipEnabled = !marginClipEnabled;
@@ -119,10 +114,6 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 		marginLinesEnabled = !marginLinesEnabled;
 		saveSetting('margin_lines_enabled', marginLinesEnabled);
 	}
-
-	
-
-	
 
 	// --- Tekst / rijeci (trenutna PDF stranica) ---
 	let words = $state([]);
@@ -303,8 +294,7 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 		const positions = getSavedPositions();
 		if (positions[safeKey] !== undefined) {
 			targetPage = parseInt(positions[safeKey], 10);
-			
-		} 
+		}
 
 		await renderPdfPage(targetPage);
 
@@ -741,19 +731,17 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 	}
 </script>
 
-
-
 <div class="container-fluid">
-<div class="d-flex ms-auto">
-	<button
-        class="qt-btn qt-settings ms-auto"
-        type="button"
-        title="Podesavanja"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#offcanvasScrolling"
-        aria-controls="offcanvasScrolling"
-    >⚙</button>
-</div>
+	<div class="d-flex ms-auto">
+		<button
+			class="qt-btn qt-settings ms-auto"
+			type="button"
+			title="Podesavanja"
+			data-bs-toggle="offcanvas"
+			data-bs-target="#offcanvasScrolling"
+			aria-controls="offcanvasScrolling">⚙</button
+		>
+	</div>
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100">
 		<div class="card-body py-2">
@@ -779,10 +767,6 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 
 				<!-- Kontrole za Font, Širinu i Margine -->
 				<div class="d-flex flex-wrap align-items-center gap-3">
-					
-
-					
-
 					<div class="toolbar-group d-flex align-items-center gap-2">
 						<div class="form-check form-switch mb-0">
 							<input
@@ -812,9 +796,6 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 					</div>
 
 					<!-- Margin Lijeva  -->
-					
-
-					
 
 					<!-- Kraj margine širine -->
 				</div>
@@ -1039,7 +1020,9 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 						<button class="btn btn-danger btn-sm" type="button" onclick={stopPacer}
 							>⏹ Stop Pacer</button
 						>
-						<span class="info fw-bold">Tempo: {paceWpm} wpm, Riječi: {podesavanja.paceChunkSize}</span>
+						<span class="info fw-bold"
+							>Tempo: {paceWpm} wpm, Riječi: {podesavanja.paceChunkSize}</span
+						>
 					</div>
 				{/if}
 			</div>
@@ -1139,45 +1122,45 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_ST
 </div>
 
 <style>
- .settings-container-bottom {
-        position: fixed;
-        bottom: 20px;
-        left: 10px;
-        z-index: 1000;
-    }
+	.settings-container-bottom {
+		position: fixed;
+		bottom: 20px;
+		left: 10px;
+		z-index: 1000;
+	}
 
-    .qt-settings {
-        background: none;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        display: inline-block;
-        transition: transform 0.4s ease;
-    }
+	.qt-settings {
+		background: none;
+		border: none;
+		font-size: 2rem;
+		cursor: pointer;
+		display: inline-block;
+		transition: transform 0.4s ease;
+	}
 
-    .qt-settings:hover {
-        transform: rotate(90deg);
-    }
+	.qt-settings:hover {
+		transform: rotate(90deg);
+	}
 
-.qt-settings {
-        background: none;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        display: inline-block;
-        transition: transform 0.4s ease;
-    }
+	.qt-settings {
+		background: none;
+		border: none;
+		font-size: 2rem;
+		cursor: pointer;
+		display: inline-block;
+		transition: transform 0.4s ease;
+	}
 
-    /* Rotacija na hover */
-    .qt-settings:hover {
-        transform: rotate(90deg);
-    }
+	/* Rotacija na hover */
+	.qt-settings:hover {
+		transform: rotate(90deg);
+	}
 
-    nav {
-        background-color: #f8f8f8;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        padding: 15px 25px;
-    }
+	nav {
+		background-color: #f8f8f8;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+		padding: 15px 25px;
+	}
 	.reader-page {
 		max-width: 1100px;
 	}

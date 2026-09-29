@@ -1,9 +1,7 @@
 <script>
-
-
 import { tick } from 'svelte';
 import {localStore} from '$lib/functionsHelper/myFunctions.svelte'
-    // --- Vjezba zagrijavanja - tacka ide sredina -> gore -> sredina -> dolje -> sredina ---
+  
     let position = $state(0); // -1 = gore, 0 = sredina, 1 = dolje
     let running = $state(false);
     const brzinaMs = localStore('brzinaMs', 1500);
@@ -126,8 +124,6 @@ let scrCenter=$state(null);
  <span  class="input-group-text">Boja tačke</span>
     <input style="width: 3rem;height: 1.9rem;" bind:value={bojaTackeVert.value}  type="color" class="form-control">
 </div>
-
-
 
         {#if !running}
             <button class="btn btn-warning btn-sm" type="button" onclick={start}>▶ Start</button>

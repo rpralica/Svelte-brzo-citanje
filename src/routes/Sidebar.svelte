@@ -2,18 +2,9 @@
 	/* global Swal */
 import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth,setPaceChunkSize,setMarginDebljina,setMarginBoja,setPacerColor,changeFont,resetFont, MARGIN_STEP,WIDTH_STEP,resetPacer,resetMargin } from '$lib/functionsHelper/settings.svelte.js';
 
-	// let { pacerColor = $bindable(), paceChunkSize = $bindable() } = $props();
 
-	
-
-	// Dok tajmer JOS NIJE pokrenut, prati promjene inputa i azuriraj prikaz odmah.
-	// Nakon prvog starta (hasStarted=true) ovo se vise ne aktivira, pa Pauza ne
-	// prepisuje "remaining" nazad na vrijednost iz inputa.
 </script>
 
-<!-- Uski fiksni sidebar - uvijek vidljiv, brzi pristup tajmerima -->
-
-<!-- Offcanvas - samo za podesavanje pocetnog vremena countdown-a -->
 <!-- 1. Offcanvas meni (sadržaj podešavanja) -->
 <div
     class="offcanvas offcanvas-start"
@@ -184,8 +175,6 @@ import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth,setPaceChu
 
     </div>
 </div>
-
-
 
 <style>
 	/* Fiksiramo kontejner na dno ekrana (ili možeš prilagoditi poziciju ako imaš sidebar) */

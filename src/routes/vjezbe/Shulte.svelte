@@ -20,11 +20,9 @@
 	function buildGrid(n) {
 		const total = n * n;
 		const mid = centerIndex(n);
-
 		const rest = [];
 		for (let num = 2; num <= total; num++) rest.push(num);
 		const shuffled = shuffleArray(rest);
-
 		const grid = new Array(total);
 		let ri = 0;
 		for (let i = 0; i < total; i++) {
@@ -39,19 +37,14 @@
 	}
 
 	let grid = $state(buildGrid(size));
-
 	function changeSize(n) {
 		size = n;
 		grid = buildGrid(size);
 	}
-
 	function shuffle() {
 		grid = buildGrid(size);
 	}
 </script>
-
-<!-- LIJEVA KOLONA: Schulte tabele -->
-
 <h1 class="text-center mb-3">Shulte table</h1>
 
 <div class="schulte-wrap">
@@ -81,8 +74,6 @@
 		{/each}
 	</div>
 </div>
-
-<!-- DESNA KOLONA: Tachistoscope -->
 
 <style>
 	.schulte-grid {

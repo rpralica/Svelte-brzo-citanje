@@ -18,9 +18,6 @@
 <legend class="text-center text-success fw-bold fst-italic">
     {selWpm === 'rijeci' ? 'Riječi' : selWpm === 'wpm' ? 'Wpm' : 'Vrijeme'}
 </legend>
-
-   
-
     <div class="container mt-3">
         <div class="row">
             <div class="col-12">
@@ -36,7 +33,6 @@
 
 {#if selWpm==='rijeci'}
 
-<!-- Proslijeđujemo mod iz selecta i bindujemo vrijednosti da se čuvaju u roditelju -->
 <Rijeci  bind:wpm bind:min bind:sec></Rijeci>
 
 {:else if selWpm==='wpm' }
