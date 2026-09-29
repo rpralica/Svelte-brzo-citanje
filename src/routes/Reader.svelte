@@ -364,16 +364,31 @@
 	let raceLastTime = 0;
 
 	function startRace() {
-		if (!currentFileName) {
-			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
-			return;
-		}
-		raceActive = true;
-		raceStats = [];
-		raceCheckpoints = [];
-		raceLastTime = Date.now();
-		isPaused = false;
-	}
+        if (!currentFileName) {
+            Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+            return;
+        }
+        raceActive = true;
+        raceStats = [];
+        raceCheckpoints = [];
+        raceLastTime = Date.now();
+        isPaused = false;
+
+        // Automatski skroluj na vrh teksta da ne moraš ručno da tražiš početak
+        document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+	function stopRace() {
+        if (raceActive && totalPages === 1 && raceStats.length === 0) {
+            recordPageIfRacing();
+        }
+        raceActive = false;
+        isPaused = false;
+        if (raceStats.length === 0) {
+            Swal.fire('Race završen', 'Nije zabilježena nijedna završena stranica.', 'info');
+            return;
+        }
+    }
 
 	let raceCheckpoints = $state([]);
 	const CHECKPOINT_THRESHOLDS = [
@@ -412,17 +427,7 @@
 		}
 	}
 
-	function stopRace() {
-		if (raceActive && totalPages === 1 && raceStats.length === 0) {
-			recordPageIfRacing();
-		}
-		raceActive = false;
-		isPaused = false;
-		if (raceStats.length === 0) {
-			Swal.fire('Race završen', 'Nije zabilježena nijedna završena stranica.', 'info');
-			return;
-		}
-	}
+
 
 	// --- Pacer ---
 	let paceWpm = $state(300);
@@ -500,30 +505,49 @@
 		paceIntervalId = setInterval(paceTick, paceIntervalMs());
 	}
 
-	function startPacer() {
-		if (!currentFileName) {
-			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
-			return;
-		}
-		saveSetting('pace_wpm', paceWpm);
-		paceActive = true;
-		paceIndex = 0;
-		isPaused = false;
-		startPaceIntervalInternal();
-	}
+	
+function startPacer() {
+        if (!currentFileName) {
+            Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+            return;
+        }
+        
+        // Čuvanje WPM-a (ako koristiš ovu funkciju negdje)
+        if (typeof saveSetting === 'function') {
+            saveSetting('pace_wpm', paceWpm);
+        }
 
-	function stopPacer() {
-		if (paceIntervalId !== null) {
-			clearInterval(paceIntervalId);
-			paceIntervalId = null;
-		}
-		if (paceAutoNextTimeoutId !== null) {
-			clearTimeout(paceAutoNextTimeoutId);
-			paceAutoNextTimeoutId = null;
-		}
-		paceActive = false;
-		paceIndex = 0;
-	}
+        // Pacer PALI I RACE u isto vrijeme, po našem dogovoru!
+        paceActive = true;
+        raceActive = true; 
+        raceStats = [];
+        raceCheckpoints = [];
+        raceLastTime = Date.now();
+        
+        paceIndex = 0;
+        isPaused = false;
+        startPaceIntervalInternal();
+
+        // Automatski skroluj na vrh teksta i za pacer
+        document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function stopPacer() {
+        if (paceIntervalId !== null) {
+            clearInterval(paceIntervalId);
+            paceIntervalId = null;
+        }
+        if (paceAutoNextTimeoutId !== null) {
+            clearTimeout(paceAutoNextTimeoutId);
+            paceAutoNextTimeoutId = null;
+        }
+        paceActive = false;
+        paceIndex = 0;
+        
+        // Kada gašenje pacera ugasi i race (ili ostaje race? Možeš ostaviti da se i race zaustavi ili ostane aktivan – po želji, ali obično ide stop oboje)
+        raceActive = false; 
+    }
+
 	// --- Pauza/Nastavi ---
 	let isPaused = $state(false);
 	let racePausedAt = 0;
@@ -1018,7 +1042,7 @@
 							<label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label>
 						</div>
 						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
-							>🎯 Start Pacer</button
+							>🎯 Start Pacer i Race</button
 						>
 						<div class="form-check form-switch">
 							<input
@@ -1048,6 +1072,7 @@
 
 	<div
 		class="reader-content-wrap"
+		id="reader-content-wrap"
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
 		marginClipEnabled
 			? `inset(0 ${podesavanja.marginRight}% 0 ${podesavanja.marginLeft}%)`
