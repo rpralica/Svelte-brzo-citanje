@@ -770,6 +770,34 @@ function startPacer() {
 			selectedWordCount = 0;
 		}
 	}
+
+// Funkcija koja se okida na tap/klik po PDF kontejneru
+function handlePdfTap() {
+    // Reagujemo samo ako je trka ili pacer zapravo aktivan
+    if (!paceActive && !raceActive) return; 
+
+    // Prebaci pauzu (suprotno od trenutnog stanja)
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        // Ako je pauzirano, zaustavi interval pacera ako radi
+        if (paceIntervalId !== null) {
+            clearInterval(paceIntervalId);
+            paceIntervalId = null;
+        }
+        // Ovdje možeš dodati i pauziranje štoperice za trku ako je potrebno
+    } else {
+        // Ako se nastavlja, ponovo pokreni pacer interval
+        if (paceActive) {
+            startPaceIntervalInternal();
+        }
+        // Ovdje nastavi mjerenje vremena za trku
+        if (raceActive) {
+            raceLastTime = Date.now(); // da ti ne računa pauzu u vrijeme trke
+        }
+    }
+}
+
 </script>
 
 <div class="container-fluid">
@@ -1042,7 +1070,7 @@ function startPacer() {
 							<label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label>
 						</div>
 						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
-							>🎯 Start Pacer i Race</button
+							>🎯 Start Pacer + 🏁 Race</button
 						>
 						<div class="form-check form-switch">
 							<input
@@ -1073,6 +1101,7 @@ function startPacer() {
 	<div
 		class="reader-content-wrap"
 		id="reader-content-wrap"
+		onclick={handlePdfTap}
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
 		marginClipEnabled
 			? `inset(0 ${podesavanja.marginRight}% 0 ${podesavanja.marginLeft}%)`

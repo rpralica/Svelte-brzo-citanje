@@ -1,6 +1,5 @@
 <script>
     import { page } from '$app/state';
-
     // Stanje za otvaranje/zatvaranje menija na mobilnom
     let isOpen = $state(false);
     let navEl; // referenca na <nav> element, za detekciju klika van menija
