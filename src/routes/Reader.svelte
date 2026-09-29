@@ -1,31 +1,41 @@
 <script>
-
 	/* global Swal*/
 	import { onMount } from 'svelte';
-	import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
-	import { onAuthStateChanged } from 'firebase/auth';
-	import { doc, getDoc, setDoc } from 'firebase/firestore';
-
+import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth, MARGIN_STEP,WIDTH_STEP } from '$lib/functionsHelper/settings.svelte.js';
 	//Podešavanje
-	let { changeColor, marginDebljina,paceChunkSize } = $props();
+	
 	let marginClipEnabled = $state(false);
-	// --- Korisnik / Auth ---
-	let currentUser = $state(null);
 	let paceAutoNext = $state(false);
 	let paceAutoNextTimeoutId = null;
-let pastedText=$state('');
+	let pastedText = $state('');
+
+	// --- Generalni localStorage helperi (zamjena za Firebase) ---
+	function saveSetting(key, value) {
+		if (typeof localStorage === 'undefined') return;
+		try {
+			localStorage.setItem(key, JSON.stringify(value));
+		} catch (e) {
+			console.error('Greška pri čuvanju u localStorage:', e);
+		}
+	}
+
+	function loadSetting(key) {
+		if (typeof localStorage === 'undefined') return undefined;
+		try {
+			const raw = localStorage.getItem(key);
+			return raw !== null ? JSON.parse(raw) : undefined;
+		} catch (e) {
+			return undefined;
+		}
+	}
+
 	function togglePaceAutoNext() {
 		paceAutoNext = !paceAutoNext;
-		saveSettingToFirebase('pace_auto_next', paceAutoNext);
+		saveSetting('pace_auto_next', paceAutoNext);
 	}
 
 	onMount(() => {
-		const unsubscribe = onAuthStateChanged(auth, async (user) => {
-			currentUser = user;
-			if (user) {
-				await loadUserSettings();
-			}
-		});
+		loadSettings();
 
 		// Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
 		const handleVisibilityChange = () => {
@@ -50,53 +60,34 @@ let pastedText=$state('');
 		window.addEventListener('keydown', handleGlobalKeydown);
 
 		return () => {
-			unsubscribe();
 			window.removeEventListener('visibilitychange', handleVisibilityChange);
 			window.removeEventListener('beforeunload', savePositionQuietly);
 			window.removeEventListener('keydown', handleGlobalKeydown);
 		};
 	});
 
-	// --- Firebase sinhronizacija podešavanja i pozicija ---
-	async function saveSettingToFirebase(key, value) {
-		if (!currentUser) return;
-		try {
-			const userRef = doc(db, 'users', currentUser.uid);
-			await setDoc(userRef, { [key]: value }, { merge: true });
-		} catch (e) {
-			console.error('Greška pri čuvanju u Firestore:', e);
-		}
-	}
-
-	async function loadUserSettings() {
-		if (!currentUser) return;
-		try {
-			const userRef = doc(db, 'users', currentUser.uid);
-			const snap = await getDoc(userRef);
-			if (snap.exists()) {
-				const data = snap.data();
-				if (data.reader_font) fontSize = data.reader_font;
-				if (data.reader_sirina) readerWidthPercent = data.reader_sirina;
-                if (data.pace_auto_next !== undefined) paceAutoNext = data.pace_auto_next;
-				if (data.margin_clip_enabled !== undefined) marginClipEnabled = data.margin_clip_enabled;
-				if (data.pace_wpm) paceWpm = data.pace_wpm;
-				if (data.margin_left !== undefined) marginLeftPercent = data.margin_left;
-				if (data.margin_right !== undefined) marginRightPercent = data.margin_right;
-				if (data.margin_lines_enabled !== undefined) marginLinesEnabled = data.margin_lines_enabled;
-			}
-		} catch (e) {
-			console.error('Greška pri učitavanju iz Firestore:', e);
-		}
+	function loadSettings() {
+		const font = loadSetting('reader_font');
+		if (font !== undefined) podesavanja.fontSize = font;
+		const sirina = loadSetting('reader_sirina');
+		if (sirina !== undefined) podesavanja.readerWidthPercent = sirina;
+		const autoNext = loadSetting('pace_auto_next');
+		if (autoNext !== undefined) paceAutoNext = autoNext;
+		const clip = loadSetting('margin_clip_enabled');
+		if (clip !== undefined) marginClipEnabled = clip;
+		const wpm = loadSetting('pace_wpm');
+		if (wpm !== undefined) paceWpm = wpm;
+		const mLeft = loadSetting('margin_left');
+		if (mLeft !== undefined) podesavanja.marginLeft = mLeft;
+		const mRight = loadSetting('margin_right');
+		if (mRight !== undefined) podesavanja.marginRight = mRight;
+		const mLines = loadSetting('margin_lines_enabled');
+		if (mLines !== undefined) marginLinesEnabled = mLines;
 	}
 
 	// --- Font / zoom ---
-	let fontSize = $state(25);
-	const FONT_MIN = 12;
-	const FONT_MAX = 60;
-
-	// function clearTa() {
-	//     pastedText = '';
-	// }
+	
+	
 
 	let raceAverageWpm = $derived.by(() => {
 		if (raceStats.length === 0) return 0;
@@ -106,53 +97,32 @@ let pastedText=$state('');
 		return totalMinutes > 0 ? Math.floor(totalWords / totalMinutes) : 0;
 	});
 
-	function changeFont(delta) {
-		fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, fontSize + delta));
-		saveSettingToFirebase('reader_font', fontSize);
-	}
-	function resetFont() {
-		fontSize = 25;
-		saveSettingToFirebase('reader_font', fontSize);
-	}
+	
 
 	// --- Sirina reader-content diva ---
-	let readerWidthPercent = $state(100);
-	const WIDTH_MIN = 20;
-	const WIDTH_MAX = 100;
-	const WIDTH_STEP = 10;
+	
 
-	function changeWidth(delta) {
-		readerWidthPercent = Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, readerWidthPercent + delta));
-		saveSettingToFirebase('reader_sirina', readerWidthPercent);
-	}
+	
 
 	// --- Vodilice (margine) ---
 	let marginLinesEnabled = $state(false);
-	let marginLeftPercent = $state(10);
-	let marginRightPercent = $state(10);
-	const MARGIN_MIN = 0;
-	const MARGIN_MAX = 40;
-	const MARGIN_STEP = 2;
+	
+
+	
 
 	function toggleMarginClip() {
 		marginClipEnabled = !marginClipEnabled;
-		saveSettingToFirebase('margin_clip_enabled', marginClipEnabled);
+		saveSetting('margin_clip_enabled', marginClipEnabled);
 	}
 
 	function toggleMarginLines() {
 		marginLinesEnabled = !marginLinesEnabled;
-		saveSettingToFirebase('margin_lines_enabled', marginLinesEnabled);
+		saveSetting('margin_lines_enabled', marginLinesEnabled);
 	}
 
-	function changeMarginLeft(delta) {
-		marginLeftPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginLeftPercent + delta));
-		saveSettingToFirebase('margin_left', marginLeftPercent);
-	}
+	
 
-	function changeMarginRight(delta) {
-		marginRightPercent = Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, marginRightPercent + delta));
-		saveSettingToFirebase('margin_right', marginRightPercent);
-	}
+	
 
 	// --- Tekst / rijeci (trenutna PDF stranica) ---
 	let words = $state([]);
@@ -210,43 +180,35 @@ let pastedText=$state('');
 		endIndex = null;
 	}
 
-	// --- Firebase pozicija (broj stranice po fajlu) ---
+	// --- Pozicija po fajlu (localStorage, jedan JSON objekat) ---
 	function sanitizeKey(name) {
 		return name.replace(/[.#$[\]]/g, '_');
+	}
+
+	function getSavedPositions() {
+		return loadSetting('pdf_stranice') || {};
 	}
 
 	let previousPositionLabel = $state('');
 
 	// Tiho čuvanje pozicije u pozadini (za auto-save pri izlasku)
-	async function savePositionQuietly() {
-		if (!currentUser || !currentFileName) return;
-		try {
-			const safeKey = sanitizeKey(currentFileName);
-			const userRef = doc(db, 'users', currentUser.uid);
-			const snap = await getDoc(userRef);
-			const data = snap.exists() ? snap.data() : {};
-			const existingPages = data.pdf_stranice || {};
-
-			existingPages[safeKey] = currentPage;
-			await setDoc(userRef, { pdf_stranice: existingPages }, { merge: true });
-		} catch (e) {
-			console.error('Greška pri automatskom čuvanju pozicije:', e);
-		}
+	function savePositionQuietly() {
+		if (!currentFileName) return;
+		const safeKey = sanitizeKey(currentFileName);
+		const positions = getSavedPositions();
+		positions[safeKey] = currentPage;
+		saveSetting('pdf_stranice', positions);
 	}
 
 	async function savePosition() {
-		if (!currentUser || !currentFileName) {
-			Swal.fire('Greška', 'Morate biti prijavljeni i učitati PDF fajl.', 'warning');
+		if (!currentFileName) {
+			Swal.fire('Greška', 'Prvo učitaj PDF fajl.', 'warning');
 			return;
 		}
 
 		const safeKey = sanitizeKey(currentFileName);
-		const userRef = doc(db, 'users', currentUser.uid);
-
-		const snap = await getDoc(userRef);
-		const data = snap.exists() ? snap.data() : {};
-		const existingPages = data.pdf_stranice || {};
-		const existing = existingPages[safeKey] || null;
+		const positions = getSavedPositions();
+		const existing = positions[safeKey] !== undefined ? positions[safeKey] : null;
 
 		const existingText =
 			existing === null
@@ -267,11 +229,11 @@ let pastedText=$state('');
 				previousPositionLabel = 'Prethodna pozicija: stranica ' + existing;
 			}
 
-			existingPages[safeKey] = currentPage;
-			await setDoc(userRef, { pdf_stranice: existingPages }, { merge: true });
+			positions[safeKey] = currentPage;
+			saveSetting('pdf_stranice', positions);
 
 			Swal.fire({
-				title: 'Sačuvano u Firebase!',
+				title: 'Sačuvano!',
 				icon: 'success',
 				timer: 1200,
 				showConfirmButton: false
@@ -280,22 +242,20 @@ let pastedText=$state('');
 	}
 
 	async function goToSavedPosition() {
-		if (!currentUser || !currentFileName) {
-			Swal.fire('Greška', 'Morate biti prijavljeni i učitati PDF fajl.', 'warning');
+		if (!currentFileName) {
+			Swal.fire('Greška', 'Prvo učitaj PDF fajl.', 'warning');
 			return;
 		}
 
 		const safeKey = sanitizeKey(currentFileName);
-		const userRef = doc(db, 'users', currentUser.uid);
-		const snap = await getDoc(userRef);
+		const positions = getSavedPositions();
 
-		if (!snap.exists() || !snap.data().pdf_stranice || !snap.data().pdf_stranice[safeKey]) {
+		if (positions[safeKey] === undefined) {
 			Swal.fire('Info', 'Nema sačuvane pozicije za ovaj fajl.', 'info');
 			return;
 		}
 
-		const saved = snap.data().pdf_stranice[safeKey];
-		await renderPdfPage(parseInt(saved, 10));
+		await renderPdfPage(parseInt(positions[safeKey], 10));
 		infoMessage = '';
 	}
 
@@ -339,18 +299,12 @@ let pastedText=$state('');
 
 		let targetPage = 1;
 
-		if (currentUser) {
-			const safeKey = sanitizeKey(currentFileName);
-			const userRef = doc(db, 'users', currentUser.uid);
-			const snap = await getDoc(userRef);
-			if (snap.exists() && snap.data().pdf_stranice && snap.data().pdf_stranice[safeKey]) {
-				const saved = snap.data().pdf_stranice[safeKey];
-				targetPage = parseInt(saved, 10);
-				infoMessage = `Nađena sačuvana stranica (${saved}). Automatski nastavljamo odatle!`;
-			} else {
-				infoMessage = '';
-			}
-		}
+		const safeKey = sanitizeKey(currentFileName);
+		const positions = getSavedPositions();
+		if (positions[safeKey] !== undefined) {
+			targetPage = parseInt(positions[safeKey], 10);
+			
+		} 
 
 		await renderPdfPage(targetPage);
 
@@ -470,7 +424,7 @@ let pastedText=$state('');
 	let paceIntervalId = null;
 
 	function paceChunk() {
-		return Math.max(1, Number(paceChunkSize) || 1);
+		return Math.max(1, Number(podesavanja.paceChunkSize) || 1);
 	}
 
 	function paceIntervalMs() {
@@ -513,23 +467,23 @@ let pastedText=$state('');
 		}
 	});
 
-function paceTick() {
-    paceIndex = paceIndex + 1;
-    if (paceIndex >= paceTotalChunks()) {
-        if (paceIntervalId !== null) {
-            clearInterval(paceIntervalId);
-            paceIntervalId = null;
-        }
-        if (paceAutoNext && currentPage < totalPages) {
-            paceAutoNextTimeoutId = setTimeout(() => {
-                paceAutoNextTimeoutId = null;
-                if (paceActive && !isPaused && currentPage < totalPages) {
-                    pdfNext();
-                }
-            }, 5000);
-        }
-    }
-}
+	function paceTick() {
+		paceIndex = paceIndex + 1;
+		if (paceIndex >= paceTotalChunks()) {
+			if (paceIntervalId !== null) {
+				clearInterval(paceIntervalId);
+				paceIntervalId = null;
+			}
+			if (paceAutoNext && currentPage < totalPages) {
+				paceAutoNextTimeoutId = setTimeout(() => {
+					paceAutoNextTimeoutId = null;
+					if (paceActive && !isPaused && currentPage < totalPages) {
+						pdfNext();
+					}
+				}, 5000);
+			}
+		}
+	}
 
 	function startPaceIntervalInternal() {
 		if (paceIntervalId !== null) {
@@ -544,45 +498,45 @@ function paceTick() {
 			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
 			return;
 		}
-		saveSettingToFirebase('pace_wpm', paceWpm);
+		saveSetting('pace_wpm', paceWpm);
 		paceActive = true;
 		paceIndex = 0;
 		isPaused = false;
 		startPaceIntervalInternal();
 	}
 
-function stopPacer() {
-    if (paceIntervalId !== null) {
-        clearInterval(paceIntervalId);
-        paceIntervalId = null;
-    }
-    if (paceAutoNextTimeoutId !== null) {
-        clearTimeout(paceAutoNextTimeoutId);
-        paceAutoNextTimeoutId = null;
-    }
-    paceActive = false;
-    paceIndex = 0;
-}
+	function stopPacer() {
+		if (paceIntervalId !== null) {
+			clearInterval(paceIntervalId);
+			paceIntervalId = null;
+		}
+		if (paceAutoNextTimeoutId !== null) {
+			clearTimeout(paceAutoNextTimeoutId);
+			paceAutoNextTimeoutId = null;
+		}
+		paceActive = false;
+		paceIndex = 0;
+	}
 	// --- Pauza/Nastavi ---
 	let isPaused = $state(false);
 	let racePausedAt = 0;
 
-function pauseSession() {
-    if (isPaused) return;
-    if (!raceActive && !paceActive) return;
-    isPaused = true;
-    if (raceActive) {
-        racePausedAt = Date.now();
-    }
-    if (paceActive && paceIntervalId !== null) {
-        clearInterval(paceIntervalId);
-        paceIntervalId = null;
-    }
-    if (paceAutoNextTimeoutId !== null) {
-        clearTimeout(paceAutoNextTimeoutId);
-        paceAutoNextTimeoutId = null;
-    }
-}
+	function pauseSession() {
+		if (isPaused) return;
+		if (!raceActive && !paceActive) return;
+		isPaused = true;
+		if (raceActive) {
+			racePausedAt = Date.now();
+		}
+		if (paceActive && paceIntervalId !== null) {
+			clearInterval(paceIntervalId);
+			paceIntervalId = null;
+		}
+		if (paceAutoNextTimeoutId !== null) {
+			clearTimeout(paceAutoNextTimeoutId);
+			paceAutoNextTimeoutId = null;
+		}
+	}
 
 	function resumeSession() {
 		if (!isPaused) return;
@@ -720,7 +674,6 @@ function pauseSession() {
 
 	let wordCountLabel = $derived('Riječi na stranici: ' + words.length);
 
-	// let pastedText = $state('');
 	let pastedWordCount = $derived(splitToWords(pastedText).length);
 	let selectedWordCount = $state(0);
 
@@ -789,8 +742,18 @@ function pauseSession() {
 </script>
 
 
-<!-- Zadnji definitivno prije spajanja -->
+
 <div class="container-fluid">
+<div class="d-flex ms-auto">
+	<button
+        class="qt-btn qt-settings ms-auto"
+        type="button"
+        title="Podesavanja"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#offcanvasScrolling"
+        aria-controls="offcanvasScrolling"
+    >⚙</button>
+</div>
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100">
 		<div class="card-body py-2">
@@ -816,38 +779,9 @@ function pauseSession() {
 
 				<!-- Kontrole za Font, Širinu i Margine -->
 				<div class="d-flex flex-wrap align-items-center gap-3">
-					<div class="toolbar-group d-flex align-items-center gap-2">
-						<span class="fw-bold small">Font</span>
-						<div class="btn-group btn-group-sm" role="group">
-							<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
-								>A-</button
-							>
-							<span class="btn btn-light disabled px-2">{fontSize}</span>
-							<button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}
-								>A+</button
-							>
-							<button class="btn btn-outline-success" type="button" onclick={resetFont}
-								>Reset</button
-							>
-						</div>
-					</div>
+					
 
-					<div class="toolbar-group d-flex align-items-center gap-2">
-						<span class="fw-bold small">Širina</span>
-						<div class="btn-group btn-group-sm" role="group">
-							<button
-								class="btn btn-outline-info"
-								type="button"
-								onclick={() => changeWidth(-WIDTH_STEP)}>−</button
-							>
-							<span class="btn btn-light disabled px-2">{readerWidthPercent}%</span>
-							<button
-								class="btn btn-outline-info"
-								type="button"
-								onclick={() => changeWidth(WIDTH_STEP)}>+</button
-							>
-						</div>
-					</div>
+					
 
 					<div class="toolbar-group d-flex align-items-center gap-2">
 						<div class="form-check form-switch mb-0">
@@ -873,42 +807,16 @@ function pauseSession() {
 								onchange={toggleMarginClip}
 								disabled={!marginLinesEnabled}
 							/>
-							<label class="form-check-label small" for="marginClipToggle">Odsijeci tekst</label>
-						</div>
-					</div>
-					<div class="toolbar-group d-flex align-items-center gap-2">
-						<span class="fw-bold small">Lijeva</span>
-						<div class="btn-group btn-group-sm" role="group">
-							<button
-								class="btn btn-outline-danger"
-								type="button"
-								onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button
-							>
-							<span class="btn btn-light disabled px-2">{marginLeftPercent}%</span>
-							<button
-								class="btn btn-outline-danger"
-								type="button"
-								onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button
-							>
+							<label class="form-check-label small" for="marginClipToggle">Odsijeci</label>
 						</div>
 					</div>
 
-					<div class="toolbar-group d-flex align-items-center gap-2">
-						<span class="fw-bold small">Desna</span>
-						<div class="btn-group btn-group-sm" role="group">
-							<button
-								class="btn btn-outline-danger"
-								type="button"
-								onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button
-							>
-							<span class="btn btn-light disabled px-2">{marginRightPercent}%</span>
-							<button
-								class="btn btn-outline-danger"
-								type="button"
-								onclick={() => changeMarginRight(MARGIN_STEP)}>+</button
-							>
-						</div>
-					</div>
+					<!-- Margin Lijeva  -->
+					
+
+					
+
+					<!-- Kraj margine širine -->
 				</div>
 			</div>
 		</div>
@@ -946,14 +854,11 @@ function pauseSession() {
 					{:else}
 						<button class="btn btn-danger btn-sm" type="button" onclick={stopTaRace}>⏹ Stop</button>
 					{/if}
-					<button class="btn btn-info btn-sm" type="button" onclick={()=>pastedText=''}
-							> 🎯 Clear</button>
-						
+					<button class="btn btn-info btn-sm" type="button" onclick={() => (pastedText = '')}
+						>🎯 Clear</button
+					>
 				</div>
-
-			
 			</div>
-
 		</div>
 	{/if}
 
@@ -1112,29 +1017,29 @@ function pauseSession() {
 						</div>
 						<div class="input-group input-group-sm" style="width: auto;">
 							<span class="input-group-text">Chunks</span>
-							<label class="fw-bold m-1" for="">{paceChunkSize}</label>
+							<label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label>
 						</div>
 						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
 							>🎯 Start Pacer</button
 						>
-                        <div class="form-check form-switch">
-    <input
-        class="form-check-input"
-        type="checkbox"
-        role="switch"
-        id="paceAutoNextToggle"
-        checked={paceAutoNext}
-        onchange={togglePaceAutoNext}
-    />
-    <label class="form-check-label small" for="paceAutoNextToggle">Autonext</label>
-</div>
+						<div class="form-check form-switch">
+							<input
+								class="form-check-input"
+								type="checkbox"
+								role="switch"
+								id="paceAutoNextToggle"
+								checked={paceAutoNext}
+								onchange={togglePaceAutoNext}
+							/>
+							<label class="form-check-label small" for="paceAutoNextToggle">Autonext</label>
+						</div>
 					</div>
 				{:else}
 					<div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
 						<button class="btn btn-danger btn-sm" type="button" onclick={stopPacer}
 							>⏹ Stop Pacer</button
 						>
-						<span class="info">Tempo: {paceWpm} wpm, grupa: {paceChunkSize}</span>
+						<span class="info fw-bold">Tempo: {paceWpm} wpm, Riječi: {podesavanja.paceChunkSize}</span>
 					</div>
 				{/if}
 			</div>
@@ -1143,25 +1048,25 @@ function pauseSession() {
 
 	<div
 		class="reader-content-wrap"
-		style="width: {readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
+		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
 		marginClipEnabled
-			? `inset(0 ${marginRightPercent}% 0 ${marginLeftPercent}%)`
+			? `inset(0 ${podesavanja.marginRight}% 0 ${podesavanja.marginLeft}%)`
 			: 'none'};"
 	>
 		{#if marginLinesEnabled}
 			<div
 				class="margin-line"
-				style=" left: {marginLeftPercent}%;background:{changeColor};width:{marginDebljina}px;"
+				style=" left: {podesavanja.marginLeft}%;background:{podesavanja.marginBoja};width:{podesavanja.marginDebljina}px;"
 			></div>
 			<div
 				class="margin-line"
-				style=" right: {marginRightPercent}%;background:{changeColor};width:{marginDebljina}px;"
+				style=" right: {podesavanja.marginRight}%;background:{podesavanja.marginBoja};width:{podesavanja.marginDebljina}px;"
 			></div>
 		{/if}
 		<div
 			bind:this={readerContentEl}
 			class="reader-content border rounded p-3 mb-3"
-			style="font-size: {fontSize}px;"
+			style="font-size: {podesavanja.fontSize}px;"
 		>
 			{#each words as word, i}
 				<span
@@ -1234,6 +1139,45 @@ function pauseSession() {
 </div>
 
 <style>
+ .settings-container-bottom {
+        position: fixed;
+        bottom: 20px;
+        left: 10px;
+        z-index: 1000;
+    }
+
+    .qt-settings {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        display: inline-block;
+        transition: transform 0.4s ease;
+    }
+
+    .qt-settings:hover {
+        transform: rotate(90deg);
+    }
+
+.qt-settings {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        display: inline-block;
+        transition: transform 0.4s ease;
+    }
+
+    /* Rotacija na hover */
+    .qt-settings:hover {
+        transform: rotate(90deg);
+    }
+
+    nav {
+        background-color: #f8f8f8;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 15px 25px;
+    }
 	.reader-page {
 		max-width: 1100px;
 	}

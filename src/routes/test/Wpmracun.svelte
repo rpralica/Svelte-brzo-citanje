@@ -1,7 +1,7 @@
 <script>
-  import Rijeci from "$lib/Rijeci.svelte";
-  import Vrijeme from "$lib/Vrijeme.svelte";
-  import Wpm from "$lib/Wpm.svelte";
+  import Rijeci from "./Rijeci.svelte";
+  import Vrijeme from "./Vrijeme.svelte";
+  import Wpm from "./Wpm.svelte";
 
   let selWpm = $state('wpm');
   let wpm = $state(0);

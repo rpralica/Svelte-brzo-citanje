@@ -1,313 +1,227 @@
 <script>
 	/* global Swal */
+import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth,setPaceChunkSize,setMarginDebljina,setMarginBoja,setPacerColor,changeFont,resetFont, MARGIN_STEP,WIDTH_STEP,resetPacer,resetMargin } from '$lib/functionsHelper/settings.svelte.js';
 
-	// --- Countdown timer ---
-	let minutesInput = $state(1);
-	let secondsInput = $state(0);
-	let remaining = $state(60);
-	let countdownRunning = $state(false);
-	let countdownIntervalId = null;
-	let hasStarted = $state(false); // false = jos nije pokrenut, prikaz prati inpute uzivo
+	// let { pacerColor = $bindable(), paceChunkSize = $bindable() } = $props();
 
-	let {
-		marginDebljina = $bindable(),
-		changeColor = $bindable(),
-		pacerColor = $bindable(),
-		paceChunkSize = $bindable()
-	} = $props();
-
-	async function resetMargin() {
-		const result = await Swal.fire({
-			title: 'Resetovati margine?',
-			text: 'Vratiti debljinu i boju na podrazumijevane vrijednosti?',
-			icon: 'question',
-			showCancelButton: true,
-			confirmButtonText: 'Da, resetuj',
-			cancelButtonText: 'Otkazi'
-		});
-
-		if (result.isConfirmed) {
-			marginDebljina = 1;
-			changeColor = '#46b2e0';
-
-			Swal.fire({
-				title: 'Resetovano!',
-				icon: 'success',
-				timer: 1000,
-				showConfirmButton: false
-			});
-		}
-	}
-
-	async function resetPacer() {
-		const result = await Swal.fire({
-			title: 'Resetovati boju pacera ?',
-			text: 'Vratiti  boju na default ?',
-			icon: 'question',
-			showCancelButton: true,
-			confirmButtonText: 'Da, resetuj',
-			cancelButtonText: 'Otkazi'
-		});
-
-		if (result.isConfirmed) {
-			pacerColor = '#0dcaf0';
-			paceChunkSize = 2;
-			Swal.fire({
-				title: 'Resetovano!',
-				icon: 'success',
-				timer: 1000,
-				showConfirmButton: false
-			});
-		}
-	}
-
-	function formatTime(totalSeconds) {
-		const m = Math.floor(totalSeconds / 60);
-		const s = totalSeconds % 60;
-		const mStr = m < 10 ? '0' + m : '' + m;
-		const sStr = s < 10 ? '0' + s : '' + s;
-		return mStr + ':' + sStr;
-	}
-
-	let countdownDisplay = $derived(formatTime(remaining));
-
-	function readCountdownInputs() {
-		let m = Number(minutesInput);
-		let s = Number(secondsInput);
-		if (isNaN(m) || m < 0) m = 1;
-		if (isNaN(s) || s < 0) s = 0;
-		if (s > 59) s = 59;
-		return m * 60 + s;
-	}
+	
 
 	// Dok tajmer JOS NIJE pokrenut, prati promjene inputa i azuriraj prikaz odmah.
 	// Nakon prvog starta (hasStarted=true) ovo se vise ne aktivira, pa Pauza ne
 	// prepisuje "remaining" nazad na vrijednost iz inputa.
-	$effect(() => {
-		if (!hasStarted) {
-			remaining = readCountdownInputs();
-		}
-	});
-
-	function countdownStart() {
-		if (countdownRunning) return;
-
-		// Svjeza vrijednost iz inputa samo ako pokrecemo prvi put ili je isteklo,
-		// inace nastavljamo (resume) od tamo gdje je pauzirano.
-		if (!hasStarted || remaining <= 0) {
-			remaining = readCountdownInputs();
-		}
-		hasStarted = true;
-		countdownRunning = true;
-		countdownIntervalId = setInterval(() => {
-			if (remaining <= 0) {
-				countdownPause();
-				Swal.fire('Vrijeme je isteklo!', '', 'info');
-				return;
-			}
-			remaining = remaining - 1;
-		}, 1000);
-	}
-
-	function countdownPause() {
-		countdownRunning = false;
-		if (countdownIntervalId !== null) {
-			clearInterval(countdownIntervalId);
-			countdownIntervalId = null;
-		}
-	}
-
-	function countdownReset() {
-		countdownPause();
-		hasStarted = false; // effect ce ponovo sinhronizovati prikaz sa inputima
-		remaining = readCountdownInputs();
-	}
-
-	// --- Stopwatch ---
-	let elapsed = $state(0);
-	let stopwatchRunning = $state(false);
-	let stopwatchIntervalId = null;
-
-	let stopwatchDisplay = $derived(formatTime(elapsed));
-
-	function stopwatchStart() {
-		if (stopwatchRunning) return;
-		stopwatchRunning = true;
-		stopwatchIntervalId = setInterval(() => {
-			elapsed = elapsed + 1;
-		}, 1000);
-	}
-
-	function stopwatchPause() {
-		stopwatchRunning = false;
-		if (stopwatchIntervalId !== null) {
-			clearInterval(stopwatchIntervalId);
-			stopwatchIntervalId = null;
-		}
-	}
-
-	function stopwatchReset() {
-		stopwatchPause();
-		elapsed = 0;
-	}
 </script>
 
 <!-- Uski fiksni sidebar - uvijek vidljiv, brzi pristup tajmerima -->
-<div class="quick-timer-strip">
-	<div class="qt-block border border-primary">
-		<div class="qt-label">Countdown</div>
-		<div class="qt-display">{countdownDisplay}</div>
-		<div class="qt-buttons">
-			<button class="qt-btn" type="button" title="Start" onclick={countdownStart}>▶</button>
-			<button class="qt-btn" type="button" title="Pauza" onclick={countdownPause}>⏸</button>
-			<button class="qt-btn" type="button" title="Reset" onclick={countdownReset}>↺</button>
-		</div>
-	</div>
-
-	<div class="qt-block">
-		<div class="qt-label">Stoperica</div>
-		<div class="qt-display">{stopwatchDisplay}</div>
-		<div class="qt-buttons">
-			<button class="qt-btn" type="button" title="Start" onclick={stopwatchStart}>▶</button>
-			<button class="qt-btn" type="button" title="Pauza" onclick={stopwatchPause}>⏸</button>
-			<button class="qt-btn" type="button" title="Reset" onclick={stopwatchReset}>↺</button>
-		</div>
-	</div>
-
-	<button
-		class="qt-btn qt-settings"
-		type="button"
-		title="Podesavanja"
-		data-bs-toggle="offcanvas"
-		data-bs-target="#offcanvasScrolling"
-		aria-controls="offcanvasScrolling">⚙</button
-	>
-</div>
 
 <!-- Offcanvas - samo za podesavanje pocetnog vremena countdown-a -->
+<!-- 1. Offcanvas meni (sadržaj podešavanja) -->
 <div
-	class="offcanvas offcanvas-start"
-	data-bs-scroll="true"
-	data-bs-backdrop="false"
-	tabindex="-1"
-	id="offcanvasScrolling"
-	aria-labelledby="offcanvasScrollingLabel"
+    class="offcanvas offcanvas-start"
+    data-bs-scroll="true"
+    data-bs-backdrop="false"
+    tabindex="-1"
+    id="offcanvasScrolling"
+    aria-labelledby="offcanvasScrollingLabel"
 >
-	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja</h5>
-		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-	</div>
-	<div class="offcanvas-body container">
-		<fieldset class="border p-3 rounded border border-primary">
-			<legend class="px-2 fw-bold text-primary text-center">Countdown</legend>
-			<div class="row">
-				<div class="col-6">
-					<div class="row">
-						<div class="col-5">
-							<label class="form-label">Minuta</label>
-						</div>
-						<div class="col-7">
-							<input type="number" min="0" class="form-control" bind:value={minutesInput} />
-						</div>
-					</div>
-				</div>
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body container">
+        
+        <!-- MARGINE -->
+        <fieldset class="border border-success p-3 rounded mt-2">
+            <legend class="text-center fw-bold text-danger">Margine</legend>
 
-				<div class="col-6">
-					<div class="row">
-						<div class="col-5">
-							<label class="form-label">Sekundi</label>
-						</div>
-						<div class="col-7">
-							<input
-								type="number"
-								min="0"
-								max="59"
-								class="form-control"
-								bind:value={secondsInput}
-							/>
-						</div>
-					</div>
-				</div>
-			</div>
+            <div class="d-flex flex-column gap-3">
+                <!-- Debljina -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Debljina</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button
+                            class="btn btn-outline-danger"
+                            type="button"
+                            onclick={() => setMarginDebljina(Math.max(1, podesavanja.marginDebljina - 1))}>−</button
+                        >
+                        <span class="btn btn-light disabled px-2 fw-bolder mb-0">{podesavanja.marginDebljina}</span>
+                        <button
+                            class="btn btn-outline-danger"
+                            type="button"
+                            onclick={() => setMarginDebljina((podesavanja.marginDebljina += 1))}>+</button
+                        >
+                    </div>
+                </div>
 
-			<div class="row mt-3">
-				<span class="h3 text-center">{countdownDisplay}</span>
-			</div>
-		</fieldset>
+                <!-- Boja -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Color</span>
+                    <input
+                        value={podesavanja.marginBoja}
+                        oninput={(e) => setMarginBoja(e.target.value)}
+                        type="color"
+                        class="form-control form-control-color w-50"
+                    />
+                </div>
 
-		<fieldset class="border border-success p-3 rounded mt-2">
-			<legend class="text-center fw-bold text-danger">Margine</legend>
+                <!-- Širina unutar Margina -->
+                <fieldset class="border border-danger p-3 rounded m-0">
+                    <legend class="h6 fw-bold text-center mb-3">Širina</legend>
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Lijeva -->
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold small">Lijeva</span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button
+                                    class="btn btn-outline-danger"
+                                    type="button"
+                                    onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button
+                                >
+                                <span class="btn btn-light disabled px-2">{podesavanja.marginLeft}%</span>
+                                <button
+                                    class="btn btn-outline-danger"
+                                    type="button"
+                                    onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button
+                                >
+                            </div>
+                        </div>
 
-			<div class="toolbar-group d-flex align-items-center gap-2">
-				<span class="fw-bold small ms-3">Debljina</span>
-				<div class="btn-group btn-group-sm" role="group">
-					<button
-						class="btn btn-outline-danger"
-						type="button"
-						onclick={() => (marginDebljina = Math.max(1, marginDebljina - 1))}>−</button
-					>
-					<p class="btn btn-light disabled px-2 fw-bolder">{marginDebljina}</p>
-					<button class="btn btn-outline-danger" type="button" onclick={() => (marginDebljina += 1)}
-						>+</button
-					>
-				</div>
-			</div>
+                        <!-- Desna -->
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold small">Desna</span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button
+                                    class="btn btn-outline-danger"
+                                    type="button"
+                                    onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button
+                                >
+                                <span class="btn btn-light disabled px-2">{podesavanja.marginRight}%</span>
+                                <button
+                                    class="btn btn-outline-danger"
+                                    type="button"
+                                    onclick={() => changeMarginRight(MARGIN_STEP)}>+</button
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
 
-			<div class="container-fluid">
-				<div class="row mt-2">
-					<div class="col-2">
-						<label class="fw-bold" for="">Color</label>
-					</div>
-					<div class="col-10">
-						<input bind:value={changeColor} type="color" class="w-25 form-control" />
-					</div>
-				</div>
-			</div>
-			<div class="container d-flex justify-content-center">
-				<button onclick={resetMargin} class="btn btn-sm btn-outline-danger mt-3">Reset</button>
-			</div>
-		</fieldset>
+                <div class="d-flex justify-content-center">
+                    <button onclick={resetMargin} class="btn btn-sm btn-outline-danger">Reset</button>
+                </div>
+            </div>
+        </fieldset>
 
-		<!-- PACER -->
+        <!-- PACER -->
+        <fieldset class="border border-danger p-3 rounded mt-3">
+            <legend class="text-center fw-bold h6 text-info-emphasis">Pacer</legend>
 
-		<fieldset class="border border-danger p-3 rounded mt-2">
-			<legend class="text-center fw-bold text-info-emphasis">Pacer</legend>
+            <div class="d-flex flex-column gap-3">
+                <!-- Color -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Color</span>
+                    <input
+                        oninput={(e) => setPacerColor(e.target.value)}
+                        value={podesavanja.pacerColor}
+                        type="color"
+                        class="form-control form-control-color w-50"
+                    />
+                </div>
 
-			<div class="container-fluid">
-				<div class="row mt-2">
-					<div class="col-2">
-						<label class="fw-bold" for="">Color</label>
-					</div>
-					<div class="col-10">
-						<input bind:value={pacerColor} type="color" class="w-25 form-control" />
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-2">
-						<label for="username" class="form-label fw-bold mt-3">Chunk</label>
-					</div>
-					<!-- Label vezan preko 'for' atributa za ID inputa -->
+                <!-- Chunk -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Chunk</span>
+                    <input
+                        type="number"
+                        id="username"
+                        min="1"
+                        class="form-control form-control-sm w-50 fw-bold"
+                        value={podesavanja.paceChunkSize ?? 2}
+                        onchange={(e) => setPaceChunkSize(Number(e.target.value))}
+                    />
+                </div>
 
-					<div class="col-10">
-						<input
-							type="number"
-							id="username"
-							min="1"
-							class="form-control w-25 fw-bold mt-2"
-							bind:value={paceChunkSize}
-						/>
-					</div>
-					<!-- Input sa bindovanim stanjem -->
-				</div>
-			</div>
-			<div class="container d-flex justify-content-center">
-				<button onclick={resetPacer} class="btn btn-sm btn-outline-danger mt-3">Reset</button>
-			</div>
-		</fieldset>
-	</div>
+                <div class="d-flex justify-content-center">
+                    <button onclick={resetPacer} class="btn btn-sm btn-outline-danger">Reset</button>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- READER -->
+        <fieldset class="border border-primary p-3 rounded mt-3">
+            <legend class="text-center h6 fw-bold">Reader</legend>
+
+            <div class="d-flex flex-column gap-3">
+                <!-- Font -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Font</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}>A-</button>
+                        <span class="btn btn-light disabled px-2">{podesavanja.fontSize}</span>
+                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}>A+</button>
+                        <button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
+                    </div>
+                </div>
+
+                <!-- Širina -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold small">Širina</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button
+                            class="btn btn-outline-info"
+                            type="button"
+                            onclick={() => changeWidth(-WIDTH_STEP)}>−</button
+                        >
+                        <span class="btn btn-light disabled px-2">{podesavanja.readerWidthPercent}%</span>
+                        <button
+                            class="btn btn-outline-info"
+                            type="button"
+                            onclick={() => changeWidth(WIDTH_STEP)}>+</button
+                        >
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+    </div>
 </div>
 
+
+
 <style>
+	/* Fiksiramo kontejner na dno ekrana (ili možeš prilagoditi poziciju ako imaš sidebar) */
+	.settings-container-bottom {
+		position: fixed;
+		bottom: 20px;
+		left: 10px;
+		z-index: 1000;
+	}
+
+	.qt-settings {
+		background: none;
+		border: none;
+		font-size: 2rem;
+		cursor: pointer;
+		display: inline-block;
+		transition: transform 0.4s ease;
+	}
+
+	.qt-settings:hover {
+		transform: rotate(90deg);
+	}
+
+	.qt-settings {
+		background: none;
+		border: none;
+		font-size: 2rem;
+		cursor: pointer;
+		display: inline-block;
+		transition: transform 0.4s ease;
+	}
+
+	/* Rotacija na hover */
+	.qt-settings:hover {
+		transform: rotate(90deg);
+	}
 	.quick-timer-strip {
 		position: fixed;
 		left: 0;
@@ -389,6 +303,9 @@
 		}
 		.qt-buttons {
 			flex-direction: row;
+		}
+		.qt-settings:hover {
+			transform: rotate(90deg);
 		}
 		.qt-btn {
 			width: 32px;
