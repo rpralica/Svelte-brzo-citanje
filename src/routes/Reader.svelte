@@ -786,7 +786,7 @@ function pauseSession() {
 		}
 	}
 </script>
-
+<!-- Zadnji prije spajanja -->
 <div class="container-fluid">
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100">
