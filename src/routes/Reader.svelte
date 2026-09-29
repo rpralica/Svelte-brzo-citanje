@@ -1,4 +1,5 @@
 <script>
+
 	/* global Swal*/
 	import { onMount } from 'svelte';
 	import { auth, db } from '$lib/firebase'; // Prilagodi putanju do svog firebase.js fajla
@@ -787,6 +788,8 @@ function pauseSession() {
 	}
 </script>
 
+
+<!-- Zadnji definitivno prije spajanja -->
 <div class="container-fluid">
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100">
