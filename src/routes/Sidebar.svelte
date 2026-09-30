@@ -1,179 +1,217 @@
 <script>
-	/* global Swal */
-import { podesavanja, changeMarginLeft, changeMarginRight,changeWidth,setPaceChunkSize,setMarginDebljina,setMarginBoja,setPacerColor,changeFont,resetFont, MARGIN_STEP,WIDTH_STEP,resetPacer,resetMargin } from '$lib/functionsHelper/settings.svelte.js';
-
-
+	import {
+		podesavanja,
+		changeMarginLeft,
+		changeMarginRight,
+		changeWidth,
+		setPaceChunkSize,
+		setMarginDebljina,
+		setMarginBoja,
+		setPacerColor,
+		changeFont,
+		resetFont,
+		MARGIN_STEP,
+		WIDTH_STEP,
+		resetPacer,
+		resetMargin,
+		setReaderBack,
+		resetReader
+	} from '$lib/functionsHelper/settings.svelte.js';
 </script>
 
 <!-- 1. Offcanvas meni (sadržaj podešavanja) -->
 <div
-    class="offcanvas offcanvas-start"
-    data-bs-scroll="true"
-    data-bs-backdrop="false"
-    tabindex="-1"
-    id="offcanvasScrolling"
-    aria-labelledby="offcanvasScrollingLabel"
+	class="offcanvas offcanvas-start"
+	data-bs-scroll="true"
+	data-bs-backdrop="false"
+	tabindex="-1"
+	id="offcanvasScrolling"
+	aria-labelledby="offcanvasScrollingLabel"
 >
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body container">
-        
-        <!-- MARGINE -->
-        <fieldset class="border border-success p-3 rounded mt-2">
-            <legend class="text-center fw-bold text-danger">Margine</legend>
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="offcanvasScrollingLabel">Podesavanja</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body container">
+		<!-- MARGINE -->
+		<fieldset class="border border-success p-3 rounded mt-2">
+			<legend class="text-center fw-bold text-danger">Margine</legend>
 
-            <div class="d-flex flex-column gap-3">
-                <!-- Debljina -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Debljina</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button
-                            class="btn btn-outline-danger"
-                            type="button"
-                            onclick={() => setMarginDebljina(Math.max(1, podesavanja.marginDebljina - 1))}>−</button
-                        >
-                        <span class="btn btn-light disabled px-2 fw-bolder mb-0">{podesavanja.marginDebljina}</span>
-                        <button
-                            class="btn btn-outline-danger"
-                            type="button"
-                            onclick={() => setMarginDebljina((podesavanja.marginDebljina += 1))}>+</button
-                        >
-                    </div>
-                </div>
+			<div class="d-flex flex-column gap-3">
+				<!-- Debljina -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Debljina</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<button
+							class="btn btn-outline-danger"
+							type="button"
+							onclick={() => setMarginDebljina(Math.max(1, podesavanja.marginDebljina - 1))}
+							>−</button
+						>
+						<span class="btn btn-light disabled px-2 fw-bolder mb-0"
+							>{podesavanja.marginDebljina}</span
+						>
+						<button
+							class="btn btn-outline-danger"
+							type="button"
+							onclick={() => setMarginDebljina((podesavanja.marginDebljina += 1))}>+</button
+						>
+					</div>
+				</div>
 
-                <!-- Boja -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Color</span>
-                    <input
-                        value={podesavanja.marginBoja}
-                        oninput={(e) => setMarginBoja(e.target.value)}
-                        type="color"
-                        class="form-control form-control-color w-50"
-                    />
-                </div>
+				<!-- Boja -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Color</span>
+					<input
+						value={podesavanja.marginBoja}
+						oninput={(e) => setMarginBoja(e.target.value)}
+						type="color"
+						class="form-control form-control-color w-50"
+					/>
+				</div>
 
-                <!-- Širina unutar Margina -->
-                <fieldset class="border border-danger p-3 rounded m-0">
-                    <legend class="h6 fw-bold text-center mb-3">Širina</legend>
-                    <div class="d-flex flex-column gap-3">
-                        <!-- Lijeva -->
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small">Lijeva</span>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button
-                                    class="btn btn-outline-danger"
-                                    type="button"
-                                    onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button
-                                >
-                                <span class="btn btn-light disabled px-2">{podesavanja.marginLeft}%</span>
-                                <button
-                                    class="btn btn-outline-danger"
-                                    type="button"
-                                    onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button
-                                >
-                            </div>
-                        </div>
+				<!-- Širina unutar Margina -->
+				<fieldset class="border border-danger p-3 rounded m-0">
+					<legend class="h6 fw-bold text-center mb-3">Širina</legend>
+					<div class="d-flex flex-column gap-3">
+						<!-- Lijeva -->
+						<div class="d-flex align-items-center justify-content-between">
+							<span class="fw-bold small">Lijeva</span>
+							<div class="btn-group btn-group-sm" role="group">
+								<button
+									class="btn btn-outline-danger"
+									type="button"
+									onclick={() => changeMarginLeft(-MARGIN_STEP)}>−</button
+								>
+								<span class="btn btn-light disabled px-2">{podesavanja.marginLeft}%</span>
+								<button
+									class="btn btn-outline-danger"
+									type="button"
+									onclick={() => changeMarginLeft(MARGIN_STEP)}>+</button
+								>
+							</div>
+						</div>
 
-                        <!-- Desna -->
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small">Desna</span>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button
-                                    class="btn btn-outline-danger"
-                                    type="button"
-                                    onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button
-                                >
-                                <span class="btn btn-light disabled px-2">{podesavanja.marginRight}%</span>
-                                <button
-                                    class="btn btn-outline-danger"
-                                    type="button"
-                                    onclick={() => changeMarginRight(MARGIN_STEP)}>+</button
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
+						<!-- Desna -->
+						<div class="d-flex align-items-center justify-content-between">
+							<span class="fw-bold small">Desna</span>
+							<div class="btn-group btn-group-sm" role="group">
+								<button
+									class="btn btn-outline-danger"
+									type="button"
+									onclick={() => changeMarginRight(-MARGIN_STEP)}>−</button
+								>
+								<span class="btn btn-light disabled px-2">{podesavanja.marginRight}%</span>
+								<button
+									class="btn btn-outline-danger"
+									type="button"
+									onclick={() => changeMarginRight(MARGIN_STEP)}>+</button
+								>
+							</div>
+						</div>
+					</div>
+				</fieldset>
 
-                <div class="d-flex justify-content-center">
-                    <button onclick={resetMargin} class="btn btn-sm btn-outline-danger">Reset</button>
-                </div>
-            </div>
-        </fieldset>
+				<div class="d-flex justify-content-center">
+					<button onclick={resetMargin} class="btn btn-sm btn-outline-danger">Reset</button>
+				</div>
+			</div>
+		</fieldset>
 
-        <!-- PACER -->
-        <fieldset class="border border-danger p-3 rounded mt-3">
-            <legend class="text-center fw-bold h6 text-info-emphasis">Pacer</legend>
+		<!-- PACER -->
+		<fieldset class="border border-danger p-3 rounded mt-3">
+			<legend class="text-center fw-bold h6 text-info-emphasis">Pacer</legend>
 
-            <div class="d-flex flex-column gap-3">
-                <!-- Color -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Color</span>
-                    <input
-                        oninput={(e) => setPacerColor(e.target.value)}
-                        value={podesavanja.pacerColor}
-                        type="color"
-                        class="form-control form-control-color w-50"
-                    />
-                </div>
+			<div class="d-flex flex-column gap-3">
+				<!-- Color -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Color</span>
+					<input
+						oninput={(e) => setPacerColor(e.target.value)}
+						value={podesavanja.pacerColor}
+						type="color"
+						class="form-control form-control-color w-50"
+					/>
+				</div>
 
-                <!-- Chunk -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Chunk</span>
-                    <input
-                        type="number"
-                        id="username"
-                        min="1"
-                        class="form-control form-control-sm w-50 fw-bold"
-                        value={podesavanja.paceChunkSize ?? 2}
-                        onchange={(e) => setPaceChunkSize(Number(e.target.value))}
-                    />
-                </div>
+				<!-- Chunk -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Chunk</span>
+					<input
+						type="number"
+						id="username"
+						min="1"
+						class="form-control form-control-sm w-50 fw-bold"
+						value={podesavanja.paceChunkSize ?? 2}
+						onchange={(e) => setPaceChunkSize(Number(e.target.value))}
+					/>
+				</div>
 
-                <div class="d-flex justify-content-center">
-                    <button onclick={resetPacer} class="btn btn-sm btn-outline-danger">Reset</button>
-                </div>
-            </div>
-        </fieldset>
+				<div class="d-flex justify-content-center">
+					<button onclick={resetPacer} class="btn btn-sm btn-outline-danger">Reset</button>
+				</div>
+			</div>
+		</fieldset>
 
-        <!-- READER -->
-        <fieldset class="border border-primary p-3 rounded mt-3">
-            <legend class="text-center h6 fw-bold">Reader</legend>
+		<!-- READER -->
+		<fieldset class="border border-primary p-3 rounded mt-3">
+			<legend class="text-center h6 fw-bold">Reader</legend>
 
-            <div class="d-flex flex-column gap-3">
-                <!-- Font -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Font</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}>A-</button>
-                        <span class="btn btn-light disabled px-2">{podesavanja.fontSize}</span>
-                        <button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}>A+</button>
-                        <button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
-                    </div>
-                </div>
+			<div class="d-flex flex-column gap-3">
+				<!-- Font -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Font</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
+							>A-</button
+						>
+						<span class="btn btn-light disabled px-2">{podesavanja.fontSize}</span>
+						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}
+							>A+</button
+						>
+						<button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
+					</div>
+				</div>
 
-                <!-- Širina -->
-                <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold small">Širina</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button
-                            class="btn btn-outline-info"
-                            type="button"
-                            onclick={() => changeWidth(-WIDTH_STEP)}>−</button
-                        >
-                        <span class="btn btn-light disabled px-2">{podesavanja.readerWidthPercent}%</span>
-                        <button
-                            class="btn btn-outline-info"
-                            type="button"
-                            onclick={() => changeWidth(WIDTH_STEP)}>+</button
-                        >
-                    </div>
-                </div>
-            </div>
-        </fieldset>
+				<!-- Širina -->
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Širina</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<button
+							class="btn btn-outline-info"
+							type="button"
+							onclick={() => changeWidth(-WIDTH_STEP)}>−</button
+						>
+						<span class="btn btn-light disabled px-2">{podesavanja.readerWidthPercent}%</span>
+						<button
+							class="btn btn-outline-info"
+							type="button"
+							onclick={() => changeWidth(WIDTH_STEP)}>+</button
+						>
+					</div>
+				</div>
 
-    </div>
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Background</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<input
+							oninput={(e) => setReaderBack(e.target.value)}
+							value={podesavanja.readerBack}
+							type="color"
+							style="width:10rem"
+							class="form-control form-control-sm fw-bold"
+						/>
+					</div>
+				</div>
+
+				<div class="d-flex justify-content-center">
+					<button class="btn btn-sm btn-outline-danger" type="button" onclick={resetReader}
+						>Reset</button
+					>
+				</div>
+			</div>
+		</fieldset>
+	</div>
 </div>
 
 <style>

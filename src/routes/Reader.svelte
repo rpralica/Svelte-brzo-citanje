@@ -1,14 +1,7 @@
 <script>
 	/* global Swal*/
 	import { onMount } from 'svelte';
-	import {
-		podesavanja,
-		changeMarginLeft,
-		changeMarginRight,
-		changeWidth,
-		MARGIN_STEP,
-		WIDTH_STEP
-	} from '$lib/functionsHelper/settings.svelte.js';
+	import { podesavanja } from '$lib/functionsHelper/settings.svelte.js';
 	//Podešavanje
 
 	let marginClipEnabled = $state(false);
@@ -252,143 +245,149 @@
 
 	// --- Učitavanje .pdf ---
 	// --- Učitavanje .pdf sa robusnom greškom ---
-    let pdfjsLib = null;
+	let pdfjsLib = null;
 
-    async function ensurePdfJs() {
-        if (pdfjsLib) return pdfjsLib;
-        pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-            'pdfjs-dist/build/pdf.worker.mjs',
-            import.meta.url
-        ).toString();
-        return pdfjsLib;
-    }
+	async function ensurePdfJs() {
+		if (pdfjsLib) return pdfjsLib;
+		pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
+		pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+			'pdfjs-dist/build/pdf.worker.mjs',
+			import.meta.url
+		).toString();
+		return pdfjsLib;
+	}
 
-    let pagesWordsCache = [];
-    let searchReady = $state(false);
-    let preparingSearch = $state(false);
+	let pagesWordsCache = [];
+	let searchReady = $state(false);
+	let preparingSearch = $state(false);
 
-    async function loadPdfFile(file) {
-        try {
-            const lib = await ensurePdfJs();
-            const arrayBuffer = await file.arrayBuffer();
-            pdfDoc = await lib.getDocument({ data: arrayBuffer }).promise;
-            totalPages = pdfDoc.numPages;
-            currentFileName = file.name;
-            currentPage = 1;
-            posIndex = null;
-            startIndex = null;
-            endIndex = null;
-            pagesWordsCache = [];
-            searchReady = false;
-            searchResults = [];
-            searchQuery = '';
-            totalWordsInDoc = 0;
-            raceActive = false;
-            raceStats = [];
-            raceCheckpoints = [];
-            stopPacer();
-            isPaused = false;
+	async function loadPdfFile(file) {
+		try {
+			const lib = await ensurePdfJs();
+			const arrayBuffer = await file.arrayBuffer();
+			pdfDoc = await lib.getDocument({ data: arrayBuffer }).promise;
+			totalPages = pdfDoc.numPages;
+			currentFileName = file.name;
+			currentPage = 1;
+			posIndex = null;
+			startIndex = null;
+			endIndex = null;
+			pagesWordsCache = [];
+			searchReady = false;
+			searchResults = [];
+			searchQuery = '';
+			totalWordsInDoc = 0;
+			raceActive = false;
+			raceStats = [];
+			raceCheckpoints = [];
+			stopPacer();
+			isPaused = false;
 
-            let targetPage = 1;
-            const safeKey = sanitizeKey(currentFileName);
-            const positions = getSavedPositions();
-            if (positions[safeKey] !== undefined) {
-                targetPage = parseInt(positions[safeKey], 10);
-            }
+			let targetPage = 1;
+			const safeKey = sanitizeKey(currentFileName);
+			const positions = getSavedPositions();
+			if (positions[safeKey] !== undefined) {
+				targetPage = parseInt(positions[safeKey], 10);
+			}
 
-            await renderPdfPage(targetPage);
+			await renderPdfPage(targetPage);
 
-            preparingSearch = true;
-            extractAllPages().then(() => {
-                preparingSearch = false;
-                searchReady = true;
-                totalWordsInDoc = pagesWordsCache.reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
-            }).catch((err) => {
-                preparingSearch = false;
-                console.error('Greška pri pozadinskoj ekstrakciji stranica:', err);
-            });
-        } catch (e) {
-            console.error('Greška pri učitavanju PDF-a:', e);
-            Swal.fire('Greška', 'Neuspješno učitavanje PDF fajla. Fajl je možda oštećen ili neispravnog formata.', 'error');
-            closePdf();
-        }
-    }
+			preparingSearch = true;
+			extractAllPages()
+				.then(() => {
+					preparingSearch = false;
+					searchReady = true;
+					totalWordsInDoc = pagesWordsCache.reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+				})
+				.catch((err) => {
+					preparingSearch = false;
+					console.error('Greška pri pozadinskoj ekstrakciji stranica:', err);
+				});
+		} catch (e) {
+			console.error('Greška pri učitavanju PDF-a:', e);
+			Swal.fire(
+				'Greška',
+				'Neuspješno učitavanje PDF fajla. Fajl je možda oštećen ili neispravnog formata.',
+				'error'
+			);
+			closePdf();
+		}
+	}
 
-    async function extractAllPages() {
-        try {
-            for (let p = 1; p <= totalPages; p++) {
-                if (pagesWordsCache[p - 1]) continue;
-                const page = await pdfDoc.getPage(p);
-                const textContent = await page.getTextContent();
-                const rawText = textContent.items.map((item) => item.str).join(' ');
-                const cleaned = rawText.replace(/\s+/g, ' ').trim();
-                pagesWordsCache[p - 1] = splitToWords(cleaned);
-            }
-        } catch (e) {
-            console.error('Greška pri ekstrakciji stranica u pozadini:', e);
-        }
-    }
+	async function extractAllPages() {
+		try {
+			for (let p = 1; p <= totalPages; p++) {
+				if (pagesWordsCache[p - 1]) continue;
+				const page = await pdfDoc.getPage(p);
+				const textContent = await page.getTextContent();
+				const rawText = textContent.items.map((item) => item.str).join(' ');
+				const cleaned = rawText.replace(/\s+/g, ' ').trim();
+				pagesWordsCache[p - 1] = splitToWords(cleaned);
+			}
+		} catch (e) {
+			console.error('Greška pri ekstrakciji stranica u pozadini:', e);
+		}
+	}
 
-    async function renderPdfPage(pageNum) {
-        try {
-            if (!pdfDoc) return;
-            if (pageNum < 1) pageNum = 1;
-            if (pageNum > totalPages) pageNum = totalPages;
-            currentPage = pageNum;
+	async function renderPdfPage(pageNum) {
+		try {
+			if (!pdfDoc) return;
+			if (pageNum < 1) pageNum = 1;
+			if (pageNum > totalPages) pageNum = totalPages;
+			currentPage = pageNum;
 
-            if (pagesWordsCache[pageNum - 1]) {
-                words = pagesWordsCache[pageNum - 1];
-            } else {
-                const page = await pdfDoc.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                const rawText = textContent.items.map((item) => item.str).join(' ');
-                const cleaned = rawText.replace(/\s+/g, ' ').trim();
-                words = splitToWords(cleaned);
-                pagesWordsCache[pageNum - 1] = words;
-            }
-            posIndex = null;
-            startIndex = null;
-            endIndex = null;
+			if (pagesWordsCache[pageNum - 1]) {
+				words = pagesWordsCache[pageNum - 1];
+			} else {
+				const page = await pdfDoc.getPage(pageNum);
+				const textContent = await page.getTextContent();
+				const rawText = textContent.items.map((item) => item.str).join(' ');
+				const cleaned = rawText.replace(/\s+/g, ' ').trim();
+				words = splitToWords(cleaned);
+				pagesWordsCache[pageNum - 1] = words;
+			}
+			posIndex = null;
+			startIndex = null;
+			endIndex = null;
 
-            // Auto-save pozicije pri svakom okretanju stranice
-            savePositionQuietly();
-        } catch (e) {
-            console.error('Greška pri renderovanju stranice:', e);
-            Swal.fire('Greška', 'Došlo je do problema pri čitanju ove stranice.', 'error');
-        }
-    }
+			// Auto-save pozicije pri svakom okretanju stranice
+			savePositionQuietly();
+		} catch (e) {
+			console.error('Greška pri renderovanju stranice:', e);
+			Swal.fire('Greška', 'Došlo je do problema pri čitanju ove stranice.', 'error');
+		}
+	}
 	// --- Race ---
 	let raceActive = $state(false);
 	let raceStats = $state([]);
 	let raceLastTime = 0;
 
 	function startRace() {
-        if (!currentFileName) {
-            Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
-            return;
-        }
-        raceActive = true;
-        raceStats = [];
-        raceCheckpoints = [];
-        raceLastTime = Date.now();
-        isPaused = false;
+		if (!currentFileName) {
+			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+			return;
+		}
+		raceActive = true;
+		raceStats = [];
+		raceCheckpoints = [];
+		raceLastTime = Date.now();
+		isPaused = false;
 
-        // Automatski skroluj na vrh teksta da ne moraš ručno da tražiš početak
-        document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
-    }
+		// Automatski skroluj na vrh teksta da ne moraš ručno da tražiš početak
+		document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
+	}
 
 	function stopRace() {
-        if (raceActive && totalPages === 1 && raceStats.length === 0) {
-            recordPageIfRacing();
-        }
-        raceActive = false;
-        isPaused = false;
-        if (raceStats.length === 0) {
-            Swal.fire('Race završen', 'Nije zabilježena nijedna završena stranica.', 'info');
-            return;
-        }
-    }
+		if (raceActive && totalPages === 1 && raceStats.length === 0) {
+			recordPageIfRacing();
+		}
+		raceActive = false;
+		isPaused = false;
+		if (raceStats.length === 0) {
+			Swal.fire('Race završen', 'Nije zabilježena nijedna završena stranica.', 'info');
+			return;
+		}
+	}
 
 	let raceCheckpoints = $state([]);
 	const CHECKPOINT_THRESHOLDS = [
@@ -426,8 +425,6 @@
 			}
 		}
 	}
-
-
 
 	// --- Pacer ---
 	let paceWpm = $state(300);
@@ -505,48 +502,47 @@
 		paceIntervalId = setInterval(paceTick, paceIntervalMs());
 	}
 
-	
-function startPacer() {
-        if (!currentFileName) {
-            Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
-            return;
-        }
-        
-        // Čuvanje WPM-a (ako koristiš ovu funkciju negdje)
-        if (typeof saveSetting === 'function') {
-            saveSetting('pace_wpm', paceWpm);
-        }
+	function startPacer() {
+		if (!currentFileName) {
+			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+			return;
+		}
 
-        // Pacer PALI I RACE u isto vrijeme, po našem dogovoru!
-        paceActive = true;
-        raceActive = true; 
-        raceStats = [];
-        raceCheckpoints = [];
-        raceLastTime = Date.now();
-        
-        paceIndex = 0;
-        isPaused = false;
-        startPaceIntervalInternal();
+		// Čuvanje WPM-a (ako koristiš ovu funkciju negdje)
+		if (typeof saveSetting === 'function') {
+			saveSetting('pace_wpm', paceWpm);
+		}
 
-        // Automatski skroluj na vrh teksta i za pacer
-        document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
-    }
+		// Pacer PALI I RACE u isto vrijeme, po našem dogovoru!
+		paceActive = true;
+		raceActive = true;
+		raceStats = [];
+		raceCheckpoints = [];
+		raceLastTime = Date.now();
 
-    function stopPacer() {
-        if (paceIntervalId !== null) {
-            clearInterval(paceIntervalId);
-            paceIntervalId = null;
-        }
-        if (paceAutoNextTimeoutId !== null) {
-            clearTimeout(paceAutoNextTimeoutId);
-            paceAutoNextTimeoutId = null;
-        }
-        paceActive = false;
-        paceIndex = 0;
-        
-        // Kada gašenje pacera ugasi i race (ili ostaje race? Možeš ostaviti da se i race zaustavi ili ostane aktivan – po želji, ali obično ide stop oboje)
-        raceActive = false; 
-    }
+		paceIndex = 0;
+		isPaused = false;
+		startPaceIntervalInternal();
+
+		// Automatski skroluj na vrh teksta i za pacer
+		document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
+	}
+
+	function stopPacer() {
+		if (paceIntervalId !== null) {
+			clearInterval(paceIntervalId);
+			paceIntervalId = null;
+		}
+		if (paceAutoNextTimeoutId !== null) {
+			clearTimeout(paceAutoNextTimeoutId);
+			paceAutoNextTimeoutId = null;
+		}
+		paceActive = false;
+		paceIndex = 0;
+
+		// Kada gašenje pacera ugasi i race (ili ostaje race? Možeš ostaviti da se i race zaustavi ili ostane aktivan – po želji, ali obično ide stop oboje)
+		raceActive = false;
+	}
 
 	// --- Pauza/Nastavi ---
 	let isPaused = $state(false);
@@ -771,33 +767,32 @@ function startPacer() {
 		}
 	}
 
-// Funkcija koja se okida na tap/klik po PDF kontejneru
-function handlePdfTap() {
-    // Reagujemo samo ako je trka ili pacer zapravo aktivan
-    if (!paceActive && !raceActive) return; 
+	// Funkcija koja se okida na tap/klik po PDF kontejneru
+	function handlePdfTap() {
+		// Reagujemo samo ako je trka ili pacer zapravo aktivan
+		if (!paceActive && !raceActive) return;
 
-    // Prebaci pauzu (suprotno od trenutnog stanja)
-    isPaused = !isPaused;
+		// Prebaci pauzu (suprotno od trenutnog stanja)
+		isPaused = !isPaused;
 
-    if (isPaused) {
-        // Ako je pauzirano, zaustavi interval pacera ako radi
-        if (paceIntervalId !== null) {
-            clearInterval(paceIntervalId);
-            paceIntervalId = null;
-        }
-        // Ovdje možeš dodati i pauziranje štoperice za trku ako je potrebno
-    } else {
-        // Ako se nastavlja, ponovo pokreni pacer interval
-        if (paceActive) {
-            startPaceIntervalInternal();
-        }
-        // Ovdje nastavi mjerenje vremena za trku
-        if (raceActive) {
-            raceLastTime = Date.now(); // da ti ne računa pauzu u vrijeme trke
-        }
-    }
-}
-
+		if (isPaused) {
+			// Ako je pauzirano, zaustavi interval pacera ako radi
+			if (paceIntervalId !== null) {
+				clearInterval(paceIntervalId);
+				paceIntervalId = null;
+			}
+			// Ovdje možeš dodati i pauziranje štoperice za trku ako je potrebno
+		} else {
+			// Ako se nastavlja, ponovo pokreni pacer interval
+			if (paceActive) {
+				startPaceIntervalInternal();
+			}
+			// Ovdje nastavi mjerenje vremena za trku
+			if (raceActive) {
+				raceLastTime = Date.now(); // da ti ne računa pauzu u vrijeme trke
+			}
+		}
+	}
 </script>
 
 <div class="container-fluid">
@@ -1105,7 +1100,7 @@ function handlePdfTap() {
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
 		marginClipEnabled
 			? `inset(0 ${podesavanja.marginRight}% 0 ${podesavanja.marginLeft}%)`
-			: 'none'};"
+			: 'none'}; "
 	>
 		{#if marginLinesEnabled}
 			<div
@@ -1120,7 +1115,7 @@ function handlePdfTap() {
 		<div
 			bind:this={readerContentEl}
 			class="reader-content border rounded p-3 mb-3"
-			style="font-size: {podesavanja.fontSize}px;"
+			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important"
 		>
 			{#each words as word, i}
 				<span
@@ -1253,6 +1248,7 @@ function handlePdfTap() {
 		line-height: 1.6;
 		white-space: normal;
 	}
+
 	.word {
 		cursor: pointer;
 	}

@@ -1,5 +1,6 @@
 <script>
     import { page } from '$app/state';
+    import {podesavanja,setTema} from '$lib/functionsHelper/settings.svelte.js';
     // Stanje za otvaranje/zatvaranje menija na mobilnom
     let isOpen = $state(false);
     let navEl; // referenca na <nav> element, za detekciju klika van menija
@@ -55,7 +56,9 @@
             <a href="/vjezbe" class:active={isActive('/vjezbe')} onclick={closeMenu}>Vježbe</a>
             <a href="/test" class:active={isActive('/test')} onclick={closeMenu}>Alati</a>
         </div>
-	 
+	 <button class="btn btn-outline-secondary btn-sm" onclick={() => setTema(podesavanja.tema === 'dark' ? 'light' : 'dark')}>
+    {podesavanja.tema === 'dark' ? '☀️ Light' : '🌙 Dark'}
+</button>
     </div>
 </nav>
 

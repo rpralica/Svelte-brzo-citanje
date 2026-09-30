@@ -9,7 +9,10 @@ const pocetneVrijednosti = {
 	pacerColor: '#0dcaf0',
 	paceChunkSize: 2,
 	fontSize: 25,
-	readerWidthPercent: 40
+	readerWidthPercent: 40,
+	tema: 'light',
+	readerBack: '#f4ecd8',
+	wpm: 300
 };
 
 function ucitaj() {
@@ -108,7 +111,8 @@ export async function resetMargin() {
 	if (result.isConfirmed) {
 		podesavanja.marginLeft = 10;
 		podesavanja.marginRight = 10;
-		podesavanja.marginBoja = '#4cdee1';
+		podesavanja.marginBoja = '#46b2e0';
+		sacuvaj();
 		Swal.fire({
 			title: 'Resetovano!',
 			icon: 'success',
@@ -131,6 +135,7 @@ export async function resetPacer() {
 	if (result.isConfirmed) {
 		podesavanja.pacerColor = '#0dcaf0';
 		podesavanja.paceChunkSize = 3;
+		sacuvaj();
 		Swal.fire({
 			title: 'Resetovano!',
 			icon: 'success',
@@ -140,4 +145,43 @@ export async function resetPacer() {
 	}
 }
 
+export async function resetReader() {
+	const result = await Swal.fire({
+		title: 'Resetovati reader postavke ?',
+		text: 'Vratiti postavke na default ?',
+		icon: 'question',
+		showCancelButton: true,
+		confirmButtonText: 'Da, resetuj',
+		cancelButtonText: 'Otkazi'
+	});
 
+	if (result.isConfirmed) {
+		podesavanja.readerBack = '#f4ecd8';
+		podesavanja.fontSize = 25;
+		podesavanja.readerWidthPercent = 40;
+		sacuvaj();
+		Swal.fire({
+			title: 'Resetovano!',
+			icon: 'success',
+			timer: 1000,
+			showConfirmButton: false
+		});
+	}
+}
+
+export function setTema(value) {
+	podesavanja.tema = value;
+	if (browser) {
+		document.documentElement.setAttribute('data-bs-theme', value);
+	}
+	sacuvaj();
+}
+
+if (browser) {
+	document.documentElement.setAttribute('data-bs-theme', podesavanja.tema);
+}
+
+export function setReaderBack(value) {
+	podesavanja.readerBack = value;
+	sacuvaj();
+}
