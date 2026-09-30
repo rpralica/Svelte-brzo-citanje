@@ -8,12 +8,14 @@ const pocetneVrijednosti = {
 	marginBoja: '#46b2e0',
 	pacerColor: '#0dcaf0',
 	paceChunkSize: 2,
+	lineSpacing:1.5,
 	fontSize: 25,
 	fontFamily: 'Lexend,sans-serif', // <-- Dodato ovde
 	readerWidthPercent: 40,
 	tema: 'light',
 	readerBack: '#f4ecd8',
 	bold: false
+
 };
 
 function ucitaj() {
@@ -87,6 +89,12 @@ export function changeFont(delta) {
 	podesavanja.fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, podesavanja.fontSize + delta));
 	sacuvaj();
 }
+
+export function setLineSpacing(value) {
+	podesavanja.lineSpacing = Number(value);
+	sacuvaj();
+}
+
 
 export function resetFont() {
 	podesavanja.fontSize = 25;

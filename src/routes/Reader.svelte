@@ -932,7 +932,7 @@ function toggleBold() {
 						<div class="info mb-1">Rezultata: {searchResults.length}</div>
 						{#each searchResults as r}
 							<div class="search-result-item" onclick={() => goToResult(r)}>
-								<span class="badge bg-secondary me-2">str. {r.page}</span>{r.context}
+								<span class="badge bg-secondary me-2 ">str. {r.page}</span>{r.context}
 							</div>
 						{/each}
 					</div>
@@ -1002,7 +1002,7 @@ function toggleBold() {
 				{#if raceStats.length > 0}
 					<div class="race-stats mt-2">
 						{#each raceStats as s}
-							<div class="info">
+							<div class="text-danger h6">
 								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} riječi, {s.seconds.toFixed(
 									1
 								)} s)
@@ -1106,7 +1106,7 @@ function toggleBold() {
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
 		marginClipEnabled
 			? `inset(0 ${podesavanja.marginRight}% 0 ${podesavanja.marginLeft}%)`
-			: 'none'}; "
+			: 'none'};"
 	>
 		{#if marginLinesEnabled}
 			<div
@@ -1126,7 +1126,7 @@ function toggleBold() {
 			class="reader-content border rounded p-3 mb-3 border border-3 border-info"
 			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important;font-Family:{podesavanja.fontFamily};font-weight: {podesavanja.bold
 				? 'bold'
-				: 'normal'}"
+				: 'normal'}; line-height:{podesavanja.lineSpacing}"
 		>
 			{#each words as word, i}
 				<span

@@ -15,8 +15,10 @@
 		resetPacer,
 		resetMargin,
 		setReaderBack,
+		setLineSpacing,
 		resetReader,
-		setFontFamily
+		setFontFamily,
+
 	} from '$lib/functionsHelper/settings.svelte.js';
 
 	let otvoren = $state(false);
@@ -26,10 +28,10 @@
 		{ naziv: 'Verdana', vrednost: 'Verdana, sans-serif' },
 		{ naziv: 'Century Gothic', vrednost: 'Century Gothic, sans-serif' },
 		{ naziv: 'Tahoma', vrednost: 'Tahoma, sans-serif' },
-		{ naziv: 'Calibri', vrednost: 'Calibri, sans-serif' },
 		{ naziv: 'Lexend', vrednost: 'Lexend, sans-serif' },
-		{ naziv: 'Ubuntu', vrednost: 'Ubuntu, sans-serif' },
-		
+		{ naziv: 'Ubuntu', vrednost: 'Ubuntu, Outfit' },
+		{ naziv: 'Quicksand', vrednost: 'Quicksand, sans-serif' },
+		{ naziv: 'Outfit', vrednost: 'Outfit, sans-serif' }
 	];
 
 	function izaberiFont(f) {
@@ -248,6 +250,13 @@
 							onclick={() => changeWidth(WIDTH_STEP)}>+</button
 						>
 					</div>
+				</div>
+
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Line Spacing</span>
+				
+						<input onchange={(e)=>setLineSpacing(Number(e.target.value))}  value={podesavanja.lineSpacing} type="number" min="1.2"  max="2.5" step="0.1"  class="form-control w-25 ms-auto" />
+					
 				</div>
 
 				<div class="d-flex align-items-center justify-content-between">
