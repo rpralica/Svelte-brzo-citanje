@@ -805,14 +805,14 @@ function toggleBold() {
 		<button
 			class="qt-btn qt-settings ms-auto"
 			type="button"
-			title="Podesavanja"
+			title="Podešavanja"
 			data-bs-toggle="offcanvas"
 			data-bs-target="#offcanvasScrolling"
 			aria-controls="offcanvasScrolling">⚙</button
 		>
 	</div>
 	<!-- 1. TOOLBAR -->
-	<div class="card mb-3 w-100">
+	<div class="card mb-3 w-100 shadow-lg">
 		<div class="card-body py-2">
 			<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
 				<!-- Fajl input i Zatvori PDF (grupisano da stoji logično) -->
@@ -835,7 +835,7 @@ function toggleBold() {
 				</div>
 
 				<!-- Kontrole za Font, Širinu i Margine -->
-				<div class="d-flex flex-wrap align-items-center gap-3">
+				<div class="d-flex flex-wrap align-items-center gap-3 ">
 					<div class="toolbar-group d-flex align-items-center gap-2">
 						<div class="form-check form-switch mb-0">
 							<input
@@ -849,7 +849,7 @@ function toggleBold() {
 							<label class="form-check-label small" for="marginLinesToggle">Margine</label>
 						</div>
 					</div>
-					<div class="toolbar-group d-flex align-items-center gap-2">
+					<div class="toolbar-group d-flex align-items-center gap-2 ">
 						<div class="form-check form-switch mb-0">
 							<input
 								class="form-check-input"
@@ -880,7 +880,7 @@ function toggleBold() {
 	{/if}
 
 	{#if !currentFileName}
-		<div class="card mb-3">
+		<div class="card mb-3 shadow-lg">
 			<div class="card-body py-2">
 				<div class="d-flex justify-content-between align-items-center mb-1">
 					<span class="fw-bold small">Zalijepi tekst (brojanje riječi)</span>
@@ -1087,8 +1087,8 @@ function toggleBold() {
     </label>
 </div>
 
-						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
-							>🎯 Start Pacer + 🏁 Race</button
+						<button class="btn btn-outline-primary btn-sm" type="button" onclick={startPacer}
+							>🎯 Pacer + 🏁 Race</button
 						>
 						<div class="form-check form-switch">
 							<input
@@ -1117,7 +1117,7 @@ function toggleBold() {
 	{/if}
 
 	<div
-		class="reader-content-wrap"
+		class="reader-content-wrap shadow-lg "
 		id="reader-content-wrap"
 		onclick={handlePdfTap}
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
@@ -1135,9 +1135,12 @@ function toggleBold() {
 				style=" right: {podesavanja.marginRight}%;background:{podesavanja.marginBoja};width:{podesavanja.marginDebljina}px;"
 			></div>
 		{/if}
+
+		
+		{#if currentFileName}
 		<div
 			bind:this={readerContentEl}
-			class="reader-content border rounded p-3 mb-3"
+			class="reader-content border rounded p-3 mb-3 border border-3 border-info"
 			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important;font-Family:{podesavanja.fontFamily};font-weight: {podesavanja.bold
 				? 'bold'
 				: 'normal'}"
@@ -1153,7 +1156,13 @@ function toggleBold() {
 				>{' '}
 			{/each}
 		</div>
+		
+		
+		{/if}
+	
 	</div>
+
+
 
 	{#if currentFileName}
 		<div class="d-flex justify-content-center mb-3">
