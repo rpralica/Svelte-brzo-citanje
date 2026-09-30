@@ -71,24 +71,7 @@ function toggleBold() {
 		};
 	});
 
-	function loadSettings() {
-		const font = loadSetting('reader_font');
-		if (font !== undefined) podesavanja.fontSize = font;
-		const sirina = loadSetting('reader_sirina');
-		if (sirina !== undefined) podesavanja.readerWidthPercent = sirina;
-		const autoNext = loadSetting('pace_auto_next');
-		if (autoNext !== undefined) paceAutoNext = autoNext;
-		const clip = loadSetting('margin_clip_enabled');
-		if (clip !== undefined) marginClipEnabled = clip;
-		const wpm = loadSetting('pace_wpm');
-		if (wpm !== undefined) paceWpm = wpm;
-		const mLeft = loadSetting('margin_left');
-		if (mLeft !== undefined) podesavanja.marginLeft = mLeft;
-		const mRight = loadSetting('margin_right');
-		if (mRight !== undefined) podesavanja.marginRight = mRight;
-		const mLines = loadSetting('margin_lines_enabled');
-		if (mLines !== undefined) marginLinesEnabled = mLines;
-	}
+
 
 	// --- Font / zoom ---
 

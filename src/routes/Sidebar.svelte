@@ -27,7 +27,8 @@
 		{ naziv: 'Century Gothic', vrednost: 'Century Gothic, sans-serif' },
 		{ naziv: 'Tahoma', vrednost: 'Tahoma, sans-serif' },
 		{ naziv: 'Calibri', vrednost: 'Calibri, sans-serif' },
-		{ naziv: 'Lexend', vrednost: 'Lexend, sans-serif' }
+		{ naziv: 'Lexend', vrednost: 'Lexend, sans-serif' },
+		{ naziv: 'Ubuntu', vrednost: 'Ubuntu, sans-serif' },
 		
 	];
 
