@@ -1306,8 +1306,8 @@ function toggleBold() {
 		border-radius: 2px;
 	}
 	.info {
-		font-size: 15px;
-		color: #333;
+		font-size: 16px;
+		color: #ffffff;
 	}
 	.search-results {
 		max-height: 250px;
