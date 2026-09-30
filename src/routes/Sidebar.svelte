@@ -15,8 +15,31 @@
 		resetPacer,
 		resetMargin,
 		setReaderBack,
-		resetReader
+		resetReader,
+		setFontFamily
 	} from '$lib/functionsHelper/settings.svelte.js';
+
+	let otvoren = $state(false);
+
+	const fontovi = [
+		{ naziv: 'Arial', vrednost: 'Arial, sans-serif' },
+		{ naziv: 'Verdana', vrednost: 'Verdana, sans-serif' },
+		{ naziv: 'Century Gothic', vrednost: 'Century Gothic, sans-serif' },
+		{ naziv: 'Tahoma', vrednost: 'Tahoma, sans-serif' },
+		{ naziv: 'Calibri', vrednost: 'Calibri, sans-serif' },
+		{ naziv: 'Lexend', vrednost: 'Lexend, sans-serif' }
+		
+	];
+
+	function izaberiFont(f) {
+		setFontFamily(f.vrednost); // Poziva funkciju iz tvog store-a koja upisuje i u localStorage
+		otvoren = false;
+	}
+
+	// Izvlačimo lepo ime trenutnog fonta za prikaz na dugmetu
+	let trenutniNaziv = $derived(
+		fontovi.find((f) => f.vrednost === podesavanja.fontFamily)?.naziv || 'Izaberi font'
+	);
 </script>
 
 <!-- 1. Offcanvas meni (sadržaj podešavanja) -->
@@ -160,7 +183,7 @@
 			<div class="d-flex flex-column gap-3">
 				<!-- Font -->
 				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small">Font</span>
+					<span class="fw-bold small">Font Size</span>
 					<div class="btn-group btn-group-sm" role="group">
 						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
 							>A-</button
@@ -170,6 +193,41 @@
 							>A+</button
 						>
 						<button class="btn btn-outline-success" type="button" onclick={resetFont}>Reset</button>
+					</div>
+				</div>
+
+				<!-- FONT FAMILLY -->
+
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small">Font Family</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<div class="font-picker">
+							<!-- "Dugme" koje glumi input i otvara meni -->
+							<button
+								type="button"
+								class="btn btn-outline-info picker-btn"
+								onclick={() => (otvoren = !otvoren)}
+								style="font-family: {podesavanja.fontFamily};"
+							>
+								<span>{trenutniNaziv}</span>
+								<span class="strelica">▼</span>
+							</button>
+
+							<!-- Padajuća lista sa živim prikazom fontova -->
+							{#if otvoren}
+								<div class="dropdown-lista">
+									{#each fontovi as f, i (i)}
+										<div
+											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
+											style="font-family: {f.vrednost};"
+											onclick={() => izaberiFont(f)}
+										>
+											{f.naziv}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
 					</div>
 				</div>
 

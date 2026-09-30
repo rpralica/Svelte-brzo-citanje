@@ -19,6 +19,11 @@
 		}
 	}
 
+function toggleBold() {
+        podesavanja.bold = !podesavanja.bold;
+        // sacuvaj(); // Ako automatski snimaš u store-u
+    }
+
 	function loadSetting(key) {
 		if (typeof localStorage === 'undefined') return undefined;
 		try {
@@ -1064,6 +1069,24 @@
 							<span class="input-group-text">Chunks</span>
 							<label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label>
 						</div>
+
+						<!-- BOLD SWITCH -->
+
+
+						<div class="btn-group" role="group">
+    <input 
+        type="checkbox" 
+        class="btn-check" 
+        id="btnBoldToggle" 
+        autocomplete="off" 
+        checked={podesavanja.bold}
+        onchange={toggleBold}
+    >
+    <label class="btn btn-outline-success fw-bold" for="btnBoldToggle">
+        B
+    </label>
+</div>
+
 						<button class="btn btn-primary btn-sm" type="button" onclick={startPacer}
 							>🎯 Start Pacer + 🏁 Race</button
 						>
@@ -1115,7 +1138,9 @@
 		<div
 			bind:this={readerContentEl}
 			class="reader-content border rounded p-3 mb-3"
-			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important"
+			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important;font-Family:{podesavanja.fontFamily};font-weight: {podesavanja.bold
+				? 'bold'
+				: 'normal'}"
 		>
 			{#each words as word, i}
 				<span

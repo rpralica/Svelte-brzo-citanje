@@ -9,10 +9,11 @@ const pocetneVrijednosti = {
 	pacerColor: '#0dcaf0',
 	paceChunkSize: 2,
 	fontSize: 25,
+	fontFamily: 'Lexend,sans-serif', // <-- Dodato ovde
 	readerWidthPercent: 40,
 	tema: 'light',
 	readerBack: '#f4ecd8',
-	wpm: 300
+	bold: false
 };
 
 function ucitaj() {
@@ -32,6 +33,7 @@ function sacuvaj() {
 if (browser) {
 	document.documentElement.style.setProperty('--pace-mark-color', podesavanja.pacerColor);
 }
+
 const FONT_MIN = 12;
 const FONT_MAX = 60;
 const MARGIN_MIN = 0;
@@ -85,8 +87,15 @@ export function changeFont(delta) {
 	podesavanja.fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, podesavanja.fontSize + delta));
 	sacuvaj();
 }
+
 export function resetFont() {
 	podesavanja.fontSize = 25;
+	sacuvaj();
+}
+
+// === NOVO: Funkcija za postavljanje font familije ===
+export function setFontFamily(value) {
+	podesavanja.fontFamily = value;
 	sacuvaj();
 }
 
@@ -158,6 +167,7 @@ export async function resetReader() {
 	if (result.isConfirmed) {
 		podesavanja.readerBack = '#f4ecd8';
 		podesavanja.fontSize = 25;
+		podesavanja.fontFamily = 'Lexend,sans-serif'; // Ubacio i ovde u reset
 		podesavanja.readerWidthPercent = 40;
 		sacuvaj();
 		Swal.fire({
@@ -184,4 +194,9 @@ if (browser) {
 export function setReaderBack(value) {
 	podesavanja.readerBack = value;
 	sacuvaj();
+}
+
+function toggleBold() {
+	podesavanja.bold = !podesavanja.bold;
+	// sacuvaj(); // Ako automatski snimaš u store-u
 }
