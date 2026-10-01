@@ -200,3 +200,74 @@ Korištenje u komponenti
 <p>Brzina: {brzina.value}</p>
 
 */
+
+
+// FILE LOAD
+
+// utils.js
+export function readTxtFile(file) {
+    return new Promise((resolve, reject) => {
+        // Provjera tipa fajla
+        if (!file || file.type !== "text/plain") {
+            reject(new Error("Dozvoljeni su samo .txt fajlovi!"));
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            resolve(e.target.result); // Vraćamo pročitani sadržaj
+        };
+
+        reader.onerror = (error) => {
+            reject(error);
+        };
+
+        reader.readAsText(file);
+    });
+}
+
+
+//KORIŠTENJE
+/* 
+<script>
+    import { readTxtFile } from './utils.js'; // Uvezeš odakle ti treba
+
+    let fileContent = $state("");
+    let isFileLoaded = $state(false);
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            // Pozivamo našu funkciju i čekamo rezultat preko await-a
+            fileContent = await readTxtFile(file);
+            isFileLoaded = true;
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+</script>
+
+<main class="container">
+    <h2>Starter Template - Čitač fajlova</h2>
+
+    <input 
+        type="file" 
+        accept=".txt" 
+        disabled={isFileLoaded} 
+        onchange={handleFileUpload} 
+    />
+
+    {#if isFileLoaded}
+        <div class="content-box">
+            <h3>Učitano:</h3>
+            <pre>{fileContent}</pre>
+        </div>
+    {/if}
+</main>
+
+
+
+*/

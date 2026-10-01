@@ -1,16 +1,45 @@
 <script>
-	import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
+	import { localStore, readTxtFile } from '$lib/functionsHelper/myFunctions.svelte';
 	import { CRVENKAPICA } from '$lib/tekst_primjeri';
+	import { podesavanja, changeFont,setFontFamily } from '$lib/functionsHelper/settings.svelte'; // Prilagodi putanju do tvoje funkcije
+
 	// --- RSVP vjezba - rijeci (ili grupe rijeci) se smjenjuju na sredini ekrana ---
 	let inputText = $state(CRVENKAPICA);
+	
 	let words = $derived.by(() => {
 		const trimmed = inputText.trim();
 		if (trimmed.length === 0) return [];
 		return trimmed.split(/\s+/);
 	});
 
+
+
+	//FONT FAMILY
+let otvoren = $state(false);
+const fontovi = [
+		{ naziv: 'Arial', vrednost: 'Arial, sans-serif' },
+		{ naziv: 'Verdana', vrednost: 'Verdana, sans-serif' },
+		{ naziv: 'Century Gothic', vrednost: 'Century Gothic, sans-serif' },
+		{ naziv: 'Tahoma', vrednost: 'Tahoma, sans-serif' },
+		{ naziv: 'Lexend', vrednost: 'Lexend, sans-serif' },
+		{ naziv: 'Ubuntu', vrednost: 'Ubuntu, Outfit' },
+		{ naziv: 'Quicksand', vrednost: 'Quicksand, sans-serif' },
+		{ naziv: 'Outfit', vrednost: 'Outfit, sans-serif' }
+	];
+	let trenutniNaziv = $derived(
+		fontovi.find((f) => f.vrednost === podesavanja.fontFamily)?.naziv || 'Izaberi font'
+	);
+function izaberiFont(f) {
+		setFontFamily(f.vrednost); // Poziva funkciju iz tvog store-a koja upisuje i u localStorage
+		otvoren = false;
+	}
+
+
+
+
+
+
 	let fontColor = localStore('fontColor', '#000000');
-	// let fontColor=$state('#000000');
 	let fontSize = localStore('fontSize', 16);
 	let bg = localStore('bg', '#FFFFFF');
 	let wpm = $state(300);
@@ -21,10 +50,28 @@
 	let currentDisplay = $state('');
 	let intervalId = null;
 	let finished = $state(false);
+
 	function resetFont() {
 		bg.value = '#FFFFFF';
 		fontSize.value = 16;
 		fontColor.value = '#000000';
+	}
+
+	// Funkcija za učitavanje TXT fajla i prepisivanje preko starog teksta
+	async function handleFileSelect(event) {
+		const file = event.target.files[0];
+		if (!file) return;
+
+		try {
+			// Čitamo fajl pomoću tvoje pomoćne funkcije (briše se sve staro i postavlja novi tekst)
+			const fileContent = await readTxtFile(file);
+			inputText = fileContent;
+
+			// Opciono: resetujemo input fajla da može isti fajl ponovo da se izabere ako zatreba
+			event.target.value = '';
+		} catch (error) {
+			alert(error.message);
+		}
 	}
 
 	function totalChunks() {
@@ -85,16 +132,87 @@
 
 	{#if !running}
 		<div class="mb-3">
-			<label class="form-label small fw-bold">Tekst za vjezbu</label>
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<label class="form-label small fw-bold mb-0">Tekst za vjezbu</label>
+				<!-- Ovdje ubacujemo file input da učita TXT i pregazi sve -->
+				<div class="input-group input-group-sm" style="width: auto;">
+					<span class="input-group-text bg-light text-muted">Učitaj .txt</span>
+					<input
+						type="file"
+						accept=".txt"
+						class="form-control form-control-sm"
+						onchange={handleFileSelect}
+					/>
+				</div>
+
+				<!-- FONT SIZE -->
+
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small me-2">Font Size </span>
+					<div class="btn-group btn-group-sm" role="group">
+						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
+							>A-</button
+						>
+						<span class="btn btn-light disabled px-2 fw-bold">{podesavanja.fontSize}</span>
+						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}
+							>A+</button
+						>
+						<button class="btn btn-outline-success" type="button" onclick={podesavanja.fontSize=25}>Reset</button>
+					</div>
+				</div>
+
+				
+
+	<!-- FONT FAMILLY -->
+
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small me-2">Font Family</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<div class="font-picker">
+							<!-- "Dugme" koje glumi input i otvara meni -->
+							<button
+								type="button"
+								class="btn btn-outline-info picker-btn"
+								onclick={() => (otvoren = !otvoren)}
+								style="font-family: {podesavanja.fontFamily};"
+							>
+								<span>{trenutniNaziv}</span>
+								<span class="strelica">▼</span>
+							</button>
+
+							<!-- Padajuća lista sa živim prikazom fontova -->
+							{#if otvoren}
+								<div class="dropdown-lista">
+									{#each fontovi as f, i (i)}
+										<div
+											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
+											style="font-family: {f.vrednost};"
+											onclick={() => izaberiFont(f)}
+										>
+											{f.naziv}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+
 			<textarea
+				style="font-size: {podesavanja.fontSize}px;font-Family:{podesavanja.fontFamily}"
 				class="form-control"
 				rows="4"
-				placeholder="Zalijepi tekst ovdje..."
+				placeholder="Zalijepi tekst ovdje ili učitaj fajl..."
 				bind:value={inputText}></textarea>
 			<div class="row">
 				<div class="small text-muted mt-1 col">Rijeci: {words.length}</div>
 				<div class="col-1">
-					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2">🎯Clear</button>
+					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2"
+						>🎯Clear</button
+					>
 				</div>
 			</div>
 		</div>
@@ -157,8 +275,6 @@
 					</div>
 				</div>
 			</fieldset>
-
-			<!-- Boja fonta RSVP -->
 		</div>
 	{:else}
 		<div class="text-center mb-2">
