@@ -1,7 +1,8 @@
 <script>
 	/* global Swal*/
 	import { onMount } from 'svelte';
-	import { podesavanja } from '$lib/functionsHelper/settings.svelte.js';
+	import { podesavanja,setPaceChunkSize } from '$lib/functionsHelper/settings.svelte.js';
+	 import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
 	//Podešavanje
 
 	let marginClipEnabled = $state(false);
@@ -9,6 +10,8 @@
 	let paceAutoNextTimeoutId = null;
 	let pastedText = $state('');
 
+	//WPM
+	let paceWpm =localStore('paceWpm', 300);
 	// --- Generalni localStorage helperi (zamjena za Firebase) ---
 	function saveSetting(key, value) {
 		if (typeof localStorage === 'undefined') return;
@@ -415,7 +418,7 @@ function toggleBold() {
 	}
 
 	// --- Pacer ---
-	let paceWpm = $state(300);
+	
 	let paceActive = $state(false);
 	let paceIndex = $state(0);
 	let paceIntervalId = null;
@@ -498,7 +501,7 @@ function toggleBold() {
 
 		// Čuvanje WPM-a (ako koristiš ovu funkciju negdje)
 		if (typeof saveSetting === 'function') {
-			saveSetting('pace_wpm', paceWpm);
+			saveSetting('pace_wpm', paceWpm.value);
 		}
 
 		// Pacer PALI I RACE u isto vrijeme, po našem dogovoru!
@@ -1045,12 +1048,21 @@ function toggleBold() {
 								step="10"
 								class="form-control"
 								style="width: 70px;"
-								bind:value={paceWpm}
+								bind:value={paceWpm.value}
 							/>
 						</div>
 						<div class="input-group input-group-sm" style="width: auto;">
 							<span class="input-group-text">Chunks</span>
-							<label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label>
+							<!-- <label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label> -->
+							 <input
+								type="number"
+								min="1"
+								step="1"
+								class="form-control"
+								style="width: 70px;"
+								onchange={(e) => setPaceChunkSize(Number(e.target.value))}
+								value={podesavanja.paceChunkSize}
+							/>
 						</div>
 
 						<!-- BOLD SWITCH -->
@@ -1091,7 +1103,7 @@ function toggleBold() {
 							>⏹ Stop Pacer</button
 						>
 						<span class="info fw-bold"
-							>Tempo: {paceWpm} wpm, Riječi: {podesavanja.paceChunkSize}</span
+							>Tempo: {paceWpm.value} wpm, Riječi: {podesavanja.paceChunkSize}</span
 						>
 					</div>
 				{/if}
