@@ -910,7 +910,7 @@ function toggleBold() {
 							<strong>{totalWordsInDoc}</strong>
 						{/if}
 					</span>
-					<span class="info">{wordCountLabel}</span>
+					<span class="info ">{wordCountLabel}</span>
 					<span class="info">Stranica: {currentPage} / {totalPages}</span>
 				</div>
 
@@ -1302,7 +1302,7 @@ function toggleBold() {
 	}
 	.info {
 		font-size: 16px;
-		color: #ffffff;
+		color: #fb0909;
 	}
 	.search-results {
 		max-height: 250px;
