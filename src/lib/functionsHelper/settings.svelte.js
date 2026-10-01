@@ -118,7 +118,7 @@ export function changeWidth(delta) {
 export async function resetMargin() {
 	const result = await Swal.fire({
 		title: 'Resetovati margine?',
-		text: 'Vratiti debljinu i boju na podrazumijevane vrijednosti?',
+		text: 'Vratiti postavke na default ?',
 		icon: 'question',
 		showCancelButton: true,
 		confirmButtonText: 'Da, resetuj',
@@ -141,8 +141,8 @@ export async function resetMargin() {
 
 export async function resetPacer() {
 	const result = await Swal.fire({
-		title: 'Resetovati boju pacera ?',
-		text: 'Vratiti  boju na default ?',
+		title: 'Resetovati pacer postavke ?',
+		text: 'Vratiti postavke na default ?',
 		icon: 'question',
 		showCancelButton: true,
 		confirmButtonText: 'Da, resetuj',
@@ -204,7 +204,4 @@ export function setReaderBack(value) {
 	sacuvaj();
 }
 
-function toggleBold() {
-	podesavanja.bold = !podesavanja.bold;
-	// sacuvaj(); // Ako automatski snimaš u store-u
-}
+

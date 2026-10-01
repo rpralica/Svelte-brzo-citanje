@@ -281,10 +281,25 @@
 		</fieldset>
 	</div>
 </div>
+<div class="settings-container-bottom">
+
+		<button
+			class="qt-btn qt-settings "
+			type="button"
+			title="Podešavanja"
+			data-bs-toggle="offcanvas"
+			data-bs-target="#offcanvasScrolling"
+			aria-controls="offcanvasScrolling">⚙</button
+		>
+	
+</div>
+
 
 <style>
 	/* Fiksiramo kontejner na dno ekrana (ili možeš prilagoditi poziciju ako imaš sidebar) */
-	.settings-container-bottom {
+
+
+.settings-container-bottom {
 		position: fixed;
 		bottom: 20px;
 		left: 10px;
@@ -300,18 +315,20 @@
 		transition: transform 0.4s ease;
 	}
 
+
+
+
+	/* Rotacija na hover */
 	.qt-settings:hover {
 		transform: rotate(90deg);
 	}
 
-	.qt-settings {
-		background: none;
-		border: none;
-		font-size: 2rem;
-		cursor: pointer;
-		display: inline-block;
-		transition: transform 0.4s ease;
-	}
+
+	
+
+	
+
+	
 
 	/* Rotacija na hover */
 	.qt-settings:hover {

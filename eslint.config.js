@@ -25,6 +25,9 @@ export default defineConfig([
 	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			'svelte/require-each-key': 'off' ,
+			'svelte/no-useless-mustaches': 'off'// ili 'svelte/valid-each-key': 'off' ovisno o verziji
+		}
 	}
 ]);
