@@ -905,7 +905,7 @@ function toggleBold() {
 					<span class="info">
 						Ukupno riječi:
 						{#if preparingSearch}
-							<span class="text-muted">(računa se...)</span>
+							<span class="text-white">(računa se...)</span>
 						{:else}
 							<strong>{totalWordsInDoc}</strong>
 						{/if}
@@ -1005,7 +1005,7 @@ function toggleBold() {
 				{#if raceStats.length > 0}
 					<div class="race-stats mt-2">
 						{#each raceStats as s}
-							<div class="text-danger h6">
+							<div class="text-primary h6">
 								Str. {s.page}: <strong>{s.wpm} wpm</strong> ({s.words} riječi, {s.seconds.toFixed(
 									1
 								)} s)

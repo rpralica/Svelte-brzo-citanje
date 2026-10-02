@@ -47,7 +47,7 @@
 </script>
 <h1 class="text-center mb-3">Shulte table</h1>
 
-<div class="schulte-wrap">
+<div class="schulte-wrap ">
 	<div class="d-flex justify-content-center row mb-3">
 		<div class="col-auto">
 			<div class="btn-group" role="group">
@@ -90,6 +90,7 @@
 		border: 1px solid #ccc;
 		border-radius: 4px;
 		font-size: 1.4rem;
+		color: green;
 		font-weight: bold;
 		background: #f8f9fa;
 		user-select: none;

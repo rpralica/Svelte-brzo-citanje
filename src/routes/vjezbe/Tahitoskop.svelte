@@ -232,7 +232,7 @@
 
         {#if mode === 'text' || mode === 'mix'}
             <div class="mb-2">
-                <label for="custom-words" class="form-label small fw-bold mb-1">Tvoje riječi:</label>
+                <label for="custom-words" class="form-label small fw-bold mb-1 text-danger">Tvoje riječi:</label>
                 <textarea id="custom-words" class="form-control form-control-sm" rows="2" bind:value={customWordsInput}></textarea>
             </div>
         {/if}

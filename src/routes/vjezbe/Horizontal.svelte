@@ -147,7 +147,7 @@
 	</div>
 
 	{#if running}
-		<div class="text-center info mb-2">
+		<div class="text-center text-danger mb-2">
 			Ciklus: {trenutniCiklus + 1}{brojPonavljanja !== 'beskonacno'
 				? ' / ' + brojPonavljanja.value
 				: ''}

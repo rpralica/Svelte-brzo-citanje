@@ -40,8 +40,8 @@ function izaberiFont(f) {
 
 
 	let fontColor = localStore('fontColor', '#000000');
-	let fontSize = localStore('fontSize', 16);
-	let bg = localStore('bg', '#FFFFFF');
+	let fontSize = localStore('fontSize', 25);
+	let bg = localStore('bg', '#f4ecd8');
 	let wpm = $state(300);
 	let chunkSize = $state(1); // 1 = klasican RSVP (rijec po rijec), vise = grupe rijeci
 
@@ -52,9 +52,10 @@ function izaberiFont(f) {
 	let finished = $state(false);
 
 	function resetFont() {
-		bg.value = '#FFFFFF';
-		fontSize.value = 16;
+		bg.value = '#f4ecd8';
+		fontSize.value = 25;
 		fontColor.value = '#000000';
+		
 	}
 
 	// Funkcija za učitavanje TXT fajla i prepisivanje preko starog teksta
@@ -122,6 +123,7 @@ function izaberiFont(f) {
 		currentIndex = 0;
 		currentDisplay = '';
 		finished = false;
+		
 	}
 </script>
 
@@ -136,7 +138,7 @@ function izaberiFont(f) {
 				<label class="form-label small fw-bold mb-0">Tekst za vjezbu</label>
 				<!-- Ovdje ubacujemo file input da učita TXT i pregazi sve -->
 				<div class="input-group input-group-sm" style="width: auto;">
-					<span class="input-group-text bg-light text-muted">Učitaj .txt</span>
+					<span class="input-group-text bg-light">Učitaj .txt</span>
 					<input
 						type="file"
 						accept=".txt"
@@ -148,7 +150,7 @@ function izaberiFont(f) {
 				<!-- FONT SIZE -->
 
 				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small me-2">Font Size </span>
+					<span class="fw-bold small me-2 ms-2">FS </span>
 					<div class="btn-group btn-group-sm" role="group">
 						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
 							>A-</button
@@ -166,7 +168,7 @@ function izaberiFont(f) {
 	<!-- FONT FAMILLY -->
 
 				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small me-2">Font Family</span>
+					<span class="fw-bold small me-2 ms-2">Font</span>
 					<div class="btn-group btn-group-sm" role="group">
 						<div class="font-picker">
 							<!-- "Dugme" koje glumi input i otvara meni -->
@@ -203,14 +205,14 @@ function izaberiFont(f) {
 
 			<textarea
 				style="font-size: {podesavanja.fontSize}px;font-Family:{podesavanja.fontFamily}"
-				class="form-control"
+				class="form-control border border-3 border-danger"
 				rows="4"
 				placeholder="Zalijepi tekst ovdje ili učitaj fajl..."
 				bind:value={inputText}></textarea>
 			<div class="row">
-				<div class="small text-muted mt-1 col">Rijeci: {words.length}</div>
-				<div class="col-1">
-					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2"
+				<div class="small  mt-1 col">Rijeci: {words.length}</div>
+				<div class="col-2">
+					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2" 
 						>🎯Clear</button
 					>
 				</div>
@@ -224,7 +226,7 @@ function izaberiFont(f) {
 					type="number"
 					min="50"
 					step="10"
-					class="form-control fw-bold"
+					class="form-control fw-bold "
 					style="width: 80px;"
 					bind:value={wpm}
 				/>
@@ -248,11 +250,44 @@ function izaberiFont(f) {
 					<span class="input-group-text fw-bold">Color</span>
 					<input
 						bind:value={fontColor.value}
-						style="width: 3rem;"
+						style="width: 4rem;height:2.2rem"
 						type="color"
 						class="form-control"
 					/>
+<!-- FONT FAMILLY -->
 
+				<div class="d-flex align-items-center justify-content-between">
+					<span class="fw-bold small me-2 ms-2">Font</span>
+					<div class="btn-group btn-group-sm" role="group">
+						<div class="font-picker">
+							<!-- "Dugme" koje glumi input i otvara meni -->
+							<button
+								type="button"
+								class="btn btn-outline-info picker-btn"
+								onclick={() => (otvoren = !otvoren)}
+								style="font-family: {podesavanja.fontFamily};"
+							>
+								<span>{trenutniNaziv}</span>
+								<span class="strelica">▼</span>
+							</button>
+
+							<!-- Padajuća lista sa živim prikazom fontova -->
+							{#if otvoren}
+								<div class="dropdown-lista">
+									{#each fontovi as f, i (i)}
+										<div
+											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
+											style="font-family: {f.vrednost};"
+											onclick={() => izaberiFont(f)}
+										>
+											{f.naziv}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
 					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
 						<span class="input-group-text fw-bold">FS</span>
 						<input
@@ -260,13 +295,13 @@ function izaberiFont(f) {
 							style="width: 4rem;"
 							type="number"
 							min="10"
-							class="form-control fw-bold"
+							class="form-control fw-bold "
 						/>
 					</div>
 
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-						<span class="input-group-text fw-bold">BG</span>
-						<input bind:value={bg.value} style="width: 4rem;" type="color" class="form-control" />
+					<div class="input-group input-group-sm col-2 ms-1 " style="width: auto;">
+						<span class="input-group-text fw-bold ">BG</span>
+						<input bind:value={bg.value} style="width: 4rem;height:2.2rem" type="color" class="form-control" />
 					</div>
 
 					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
@@ -277,10 +312,10 @@ function izaberiFont(f) {
 			</fieldset>
 		</div>
 	{:else}
-		<div class="text-center mb-2">
+		<div class="text-center mb-2 ">
 			<button class="btn btn-danger btn-sm" type="button" onclick={stop}>⏹ Stop</button>
 		</div>
-		<div class="text-center info mb-2">
+		<div class="text-center text-danger mb-2">
 			Chunk {currentIndex + 1} / {totalChunks()} — {wpm} wpm, grupa: {chunkSize}
 		</div>
 	{/if}
@@ -292,9 +327,9 @@ function izaberiFont(f) {
 		</div>
 	{/if}
 
-	<div class="rsvp-screen">
+	<div class="rsvp-screen border border-3 border-info" style="background-color:{bg.value}">
 		<span
-			style="color:{fontColor.value};font-size:{fontSize.value}px;background-color:{bg.value}"
+			style="color:{fontColor.value};font-size:{fontSize.value}px;"
 			class="rsvp-word">{currentDisplay || (running ? '' : '...')}</span
 		>
 	</div>
