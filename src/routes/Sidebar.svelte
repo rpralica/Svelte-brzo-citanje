@@ -17,8 +17,7 @@
 		setReaderBack,
 		setLineSpacing,
 		resetReader,
-		setFontFamily,
-
+		setFontFamily
 	} from '$lib/functionsHelper/settings.svelte.js';
 
 	let otvoren = $state(false);
@@ -254,9 +253,16 @@
 
 				<div class="d-flex align-items-center justify-content-between">
 					<span class="fw-bold small">Line Spacing</span>
-				
-						<input onchange={(e)=>setLineSpacing(Number(e.target.value))}  value={podesavanja.lineSpacing} type="number" min="1.2"  max="2.5" step="0.1"  class="form-control w-25 ms-auto" />
-					
+
+					<input
+						onchange={(e) => setLineSpacing(Number(e.target.value))}
+						value={podesavanja.lineSpacing}
+						type="number"
+						min="1.2"
+						max="2.5"
+						step="0.1"
+						class="form-control w-25 ms-auto"
+					/>
 				</div>
 
 				<div class="d-flex align-items-center justify-content-between">
@@ -282,58 +288,51 @@
 	</div>
 </div>
 <div class="settings-container-bottom">
-
-		<button
-			class="qt-btn qt-settings "
-			type="button"
-			title="Podešavanja"
-			data-bs-toggle="offcanvas"
-			data-bs-target="#offcanvasScrolling"
-			aria-controls="offcanvasScrolling">⚙</button
-		>
-	
+    <button
+        class="qt-btn qt-settings btn btn-link text-decoration-none p-0 shadow-none"
+        type="button"
+        title="Podešavanja"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#offcanvasScrolling"
+        aria-controls="offcanvasScrolling">
+        <span class="gear-icon">⚙</span>
+    </button>
 </div>
-
 
 <style>
 	/* Fiksiramo kontejner na dno ekrana (ili možeš prilagoditi poziciju ako imaš sidebar) */
 
-
-.settings-container-bottom {
-		position: fixed;
+	.settings-container-bottom {
+		/* position: fixed; */
 		bottom: 20px;
 		left: 10px;
 		z-index: 1000;
 	}
 
 	.qt-settings {
-		background: none;
-		border: none;
-		font-size: 2rem;
-		cursor: pointer;
-		display: inline-block;
-		transition: transform 0.4s ease;
-	}
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex; /* Lakše centriranje sadržaja */
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+    }
 
+    /* Rotiramo samo unutrašnji span/ikonicu, a ne cijelo dugme! */
+    .qt-settings .gear-icon {
+        display: inline-block;
+        font-size: 3rem;
+        transition: transform 0.4s ease;
+		margin-left: 2rem;
+    }
 
+    .qt-settings:hover .gear-icon {
+        transform: rotate(90deg);
+    }
 
-
-	/* Rotacija na hover */
-	.qt-settings:hover {
-		transform: rotate(90deg);
-	}
-
-
-	
-
-	
-
-	
-
-	/* Rotacija na hover */
-	.qt-settings:hover {
-		transform: rotate(90deg);
-	}
 	.quick-timer-strip {
 		position: fixed;
 		left: 0;
@@ -365,21 +364,16 @@
 		font-weight: bold;
 		margin-bottom: 4px;
 	}
-	.qt-buttons {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		align-items: center;
-	}
+
 	.qt-btn {
 		width: 36px;
 		height: 32px;
-		border: 1px solid #999;
+
 		border-radius: 4px;
-		background: #fff;
 		cursor: pointer;
 		font-size: 15px;
-		line-height: 1;
+		line-height: 0.2;
+		
 	}
 	.qt-btn:active {
 		background: #e0e0e0;
@@ -388,7 +382,7 @@
 		margin-top: auto;
 		width: 40px;
 		height: 40px;
-		font-size: 18px;
+		font-size: 38px;
 	}
 
 	/* Na malim ekranima (telefon/uski tablet) - traka ide na dno, vodoravno */
@@ -413,12 +407,7 @@
 		.qt-block {
 			width: auto;
 		}
-		.qt-buttons {
-			flex-direction: row;
-		}
-		.qt-settings:hover {
-			transform: rotate(90deg);
-		}
+
 		.qt-btn {
 			width: 32px;
 			height: 28px;

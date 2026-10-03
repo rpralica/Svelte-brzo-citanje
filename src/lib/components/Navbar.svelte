@@ -104,16 +104,21 @@
         cursor: pointer;
     }
 
-    .nav-links a {
+.nav-links a {
         position: relative;
         padding: 10px 0;
         text-decoration: none;
-        color: #333;
+        /* Automatski prati boju teksta u zavisnosti od teme (crno u light, svijetlo u dark) */
+        color: var(--bs-body-color, #333); 
         font-weight: 500;
         font-size: 1.6rem;
         overflow: hidden;
-        transition: color 0.9s ease;
+        transition: color 0.3s ease; /* Smanjio sam sa 0.9s na 0.3s da brže reaguje na klik */
         white-space: nowrap;
+    }
+
+    .nav-links a:hover {
+        color: deepskyblue; /* Da lijepo zasvijetli na hover u oba moda */
     }
 
     .nav-links a::after {
@@ -161,9 +166,5 @@
             display: flex;
         }
 
-        .nav-links a {
-            font-size: 1.2rem;
-            padding: 5px 0;
-        }
     }
 </style>

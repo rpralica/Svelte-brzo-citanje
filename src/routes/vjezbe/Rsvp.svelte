@@ -34,11 +34,6 @@ function izaberiFont(f) {
 		otvoren = false;
 	}
 
-
-
-
-
-
 	let fontColor = localStore('fontColor', '#000000');
 	let fontSize = localStore('fontSize', 25);
 	let bg = localStore('bg', '#f4ecd8');
@@ -55,7 +50,7 @@ function izaberiFont(f) {
 		bg.value = '#f4ecd8';
 		fontSize.value = 25;
 		fontColor.value = '#000000';
-		
+		podesavanja.fontFamily='Lexend';
 	}
 
 	// Funkcija za učitavanje TXT fajla i prepisivanje preko starog teksta
@@ -127,7 +122,7 @@ function izaberiFont(f) {
 	}
 </script>
 
-<fieldset class="border p-3 rounded mt-3">
+<fieldset class="border border-primary border-4  p-3 rounded mt-3">
 	<legend class="text-center text-success fw-bold fst-italic"
 		>RSVP - brzo prepoznavanje rijeci</legend
 	>
@@ -137,8 +132,8 @@ function izaberiFont(f) {
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<label class="form-label small fw-bold mb-0">Tekst za vjezbu</label>
 				<!-- Ovdje ubacujemo file input da učita TXT i pregazi sve -->
-				<div class="input-group input-group-sm" style="width: auto;">
-					<span class="input-group-text bg-light">Učitaj .txt</span>
+				<div class="input-group input-group-sm me-auto ms-2" style="width: auto;">
+					<span class="input-group-text bg-light text-success fw-bold">Učitaj .txt</span>
 					<input
 						type="file"
 						accept=".txt"
@@ -147,72 +142,23 @@ function izaberiFont(f) {
 					/>
 				</div>
 
-				<!-- FONT SIZE -->
-
-				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small me-2 ms-2">FS </span>
-					<div class="btn-group btn-group-sm" role="group">
-						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(-1)}
-							>A-</button
-						>
-						<span class="btn btn-light disabled px-2 fw-bold">{podesavanja.fontSize}</span>
-						<button class="btn btn-outline-success" type="button" onclick={() => changeFont(1)}
-							>A+</button
-						>
-						<button class="btn btn-outline-success" type="button" onclick={podesavanja.fontSize=25}>Reset</button>
-					</div>
-				</div>
-
 				
 
-	<!-- FONT FAMILLY -->
-
-				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small me-2 ms-2">Font</span>
-					<div class="btn-group btn-group-sm" role="group">
-						<div class="font-picker">
-							<!-- "Dugme" koje glumi input i otvara meni -->
-							<button
-								type="button"
-								class="btn btn-outline-info picker-btn"
-								onclick={() => (otvoren = !otvoren)}
-								style="font-family: {podesavanja.fontFamily};"
-							>
-								<span>{trenutniNaziv}</span>
-								<span class="strelica">▼</span>
-							</button>
-
-							<!-- Padajuća lista sa živim prikazom fontova -->
-							{#if otvoren}
-								<div class="dropdown-lista">
-									{#each fontovi as f, i (i)}
-										<div
-											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
-											style="font-family: {f.vrednost};"
-											onclick={() => izaberiFont(f)}
-										>
-											{f.naziv}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</div>
-				</div>
+			
 
 
 			</div>
 
 			<textarea
-				style="font-size: {podesavanja.fontSize}px;font-Family:{podesavanja.fontFamily}"
+				style="font-size:18px;font-Family:Lexend"
 				class="form-control border border-3 border-danger"
 				rows="4"
 				placeholder="Zalijepi tekst ovdje ili učitaj fajl..."
 				bind:value={inputText}></textarea>
 			<div class="row">
 				<div class="small  mt-1 col">Rijeci: {words.length}</div>
-				<div class="col-2">
-					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2" 
+				<div class="col d-flex justify-content-end">
+					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2  " 
 						>🎯Clear</button
 					>
 				</div>
@@ -245,71 +191,72 @@ function izaberiFont(f) {
 				onclick={start}
 				disabled={words.length === 0}>▶ Start</button
 			>
-			<fieldset class="border rounded border border-primary">
-				<div class="input-group input-group-sm" style="width: auto;">
-					<span class="input-group-text fw-bold">Color</span>
-					<input
-						bind:value={fontColor.value}
-						style="width: 4rem;height:2.2rem"
-						type="color"
-						class="form-control"
-					/>
-<!-- FONT FAMILLY -->
+			<fieldset class="border rounded border border-primary p-2">
+    <div class="input-group input-group-sm align-items-center flex-nowrap" style="width: auto;">
+        <span class="input-group-text fw-bold">Color</span>
+        <input
+            bind:value={fontColor.value}
+            style="width: 4rem; height: 2.2rem;"
+            type="color"
+            class="form-control"
+        />
 
-				<div class="d-flex align-items-center justify-content-between">
-					<span class="fw-bold small me-2 ms-2">Font</span>
-					<div class="btn-group btn-group-sm" role="group">
-						<div class="font-picker">
-							<!-- "Dugme" koje glumi input i otvara meni -->
-							<button
-								type="button"
-								class="btn btn-outline-info picker-btn"
-								onclick={() => (otvoren = !otvoren)}
-								style="font-family: {podesavanja.fontFamily};"
-							>
-								<span>{trenutniNaziv}</span>
-								<span class="strelica">▼</span>
-							</button>
+        <!-- FONT PICKER SEKCIJA -->
+        <div class="d-flex align-items-center ms-2 me-1">
+            <span class="fw-bold small me-1">Font</span>
+            <div class="font-picker">
+                <button
+                    type="button"
+                    class="btn btn-outline-info btn-sm"
+                    onclick={() => (otvoren = !otvoren)}
+                    style="font-family: {podesavanja.fontFamily};"
+                >
+                    <span>{trenutniNaziv}</span>
+                    <span class="strelica">▼</span>
+                </button>
 
-							<!-- Padajuća lista sa živim prikazom fontova -->
-							{#if otvoren}
-								<div class="dropdown-lista">
-									{#each fontovi as f, i (i)}
-										<div
-											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
-											style="font-family: {f.vrednost};"
-											onclick={() => izaberiFont(f)}
-										>
-											{f.naziv}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</div>
-				</div>
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-						<span class="input-group-text fw-bold">FS</span>
-						<input
-							bind:value={fontSize.value}
-							style="width: 4rem;"
-							type="number"
-							min="10"
-							class="form-control fw-bold "
-						/>
-					</div>
+                {#if otvoren}
+                    <div class="dropdown-lista">
+                        {#each fontovi as f, i (i)}
+                            <div
+                                class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
+                                style="font-family: {f.vrednost};"
+                                onclick={() => {
+                                    izaberiFont(f);
+                                    otvoren = false; /* Zatvara listu nakon izbora */
+                                }}
+                            >
+                                {f.naziv}
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        </div>
+        <!-- KRAJ FONT PICKERA -->
 
-					<div class="input-group input-group-sm col-2 ms-1 " style="width: auto;">
-						<span class="input-group-text fw-bold ">BG</span>
-						<input bind:value={bg.value} style="width: 4rem;height:2.2rem" type="color" class="form-control" />
-					</div>
+        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+            <span class="input-group-text fw-bold">FS</span>
+            <input
+                bind:value={fontSize.value}
+                style="width: 4rem;"
+                type="number"
+                min="10"
+                class="form-control fw-bold"
+            />
+        </div>
 
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-						<span class="input-group-text fw-bold">Reset</span>
-						<button onclick={resetFont} class="btn btn-primary">Reset</button>
-					</div>
-				</div>
-			</fieldset>
+        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+            <span class="input-group-text fw-bold">BG</span>
+            <input bind:value={bg.value} style="width: 4rem; height: 2.2rem;" type="color" class="form-control" />
+        </div>
+
+        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+            <span class="input-group-text fw-bold">Reset</span>
+            <button onclick={resetFont} class="btn btn-primary btn-sm">Reset</button>
+        </div>
+    </div>
+</fieldset>
 		</div>
 	{:else}
 		<div class="text-center mb-2 ">
@@ -329,7 +276,7 @@ function izaberiFont(f) {
 
 	<div class="rsvp-screen border border-3 border-info" style="background-color:{bg.value}">
 		<span
-			style="color:{fontColor.value};font-size:{fontSize.value}px;"
+			style="color:{fontColor.value};font-size:{fontSize.value}px;font-Family:{podesavanja.fontFamily}"
 			class="rsvp-word">{currentDisplay || (running ? '' : '...')}</span
 		>
 	</div>
@@ -350,8 +297,45 @@ function izaberiFont(f) {
 		font-weight: bold;
 		color: #212529;
 	}
-	.info {
-		font-size: 14px;
-		color: #555;
-	}
+	.font-picker {
+        position: relative; 
+        display: inline-block;
+    }
+
+    /* Padajuća lista prilagođena za sve teme */
+    .dropdown-lista {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1050;
+        background-color: var(--bs-body-bg, #fff); /* Automatski prati Bootstrap pozadinu (crna/bijela) */
+        color: var(--bs-body-color, #212529);     /* Automatski prati boju teksta */
+        border: 1px solid var(--bs-border-color, #ccc);
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        max-height: 200px;
+        overflow-y: auto;
+        min-width: 140px;
+        margin-top: 4px;
+    }
+
+    .font-opcija {
+        padding: 8px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        background-color: transparent;
+    }
+
+    /* Hover efekt koji radi i u light i u dark mode-u */
+    .font-opcija:hover {
+        background-color: var(--bs-tertiary-bg, #e9ecef);
+        color: var(--bs-emphasis-color, #000);
+    }
+
+    .font-opcija.aktivan {
+        background-color: var(--bs-primary, #0d6efd);
+        color: #fff !important; /* Kada je aktivan, tekst je obavezno bijel da se vidi */
+        font-weight: bold;
+    }
+	
 </style>

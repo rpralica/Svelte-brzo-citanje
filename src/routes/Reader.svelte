@@ -1,8 +1,8 @@
 <script>
 	/* global Swal*/
 	import { onMount } from 'svelte';
-	import { podesavanja,setPaceChunkSize } from '$lib/functionsHelper/settings.svelte.js';
-	 import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
+	import { podesavanja, setPaceChunkSize } from '$lib/functionsHelper/settings.svelte.js';
+	import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
 	//Podešavanje
 
 	let marginClipEnabled = $state(false);
@@ -11,7 +11,7 @@
 	let pastedText = $state('');
 
 	//WPM
-	let paceWpm =localStore('paceWpm', 300);
+	let paceWpm = localStore('paceWpm', 300);
 	// --- Generalni localStorage helperi (zamjena za Firebase) ---
 	function saveSetting(key, value) {
 		if (typeof localStorage === 'undefined') return;
@@ -22,10 +22,10 @@
 		}
 	}
 
-function toggleBold() {
-        podesavanja.bold = !podesavanja.bold;
-        // sacuvaj(); // Ako automatski snimaš u store-u
-    }
+	function toggleBold() {
+		podesavanja.bold = !podesavanja.bold;
+		// sacuvaj(); // Ako automatski snimaš u store-u
+	}
 
 	function loadSetting(key) {
 		if (typeof localStorage === 'undefined') return undefined;
@@ -73,8 +73,6 @@ function toggleBold() {
 			window.removeEventListener('keydown', handleGlobalKeydown);
 		};
 	});
-
-
 
 	// --- Font / zoom ---
 
@@ -418,7 +416,7 @@ function toggleBold() {
 	}
 
 	// --- Pacer ---
-	
+
 	let paceActive = $state(false);
 	let paceIndex = $state(0);
 	let paceIntervalId = null;
@@ -787,16 +785,6 @@ function toggleBold() {
 </script>
 
 <div class="container-fluid">
-	<div class="d-flex ms-auto">
-		<button
-			class="qt-btn qt-settings ms-auto"
-			type="button"
-			title="Podešavanja"
-			data-bs-toggle="offcanvas"
-			data-bs-target="#offcanvasScrolling"
-			aria-controls="offcanvasScrolling">⚙</button
-		>
-	</div>
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100 shadow-lg">
 		<div class="card-body py-2">
@@ -821,7 +809,7 @@ function toggleBold() {
 				</div>
 
 				<!-- Kontrole za Font, Širinu i Margine -->
-				<div class="d-flex flex-wrap align-items-center gap-3 ">
+				<div class="d-flex flex-wrap align-items-center gap-3">
 					<div class="toolbar-group d-flex align-items-center gap-2">
 						<div class="form-check form-switch mb-0">
 							<input
@@ -835,7 +823,7 @@ function toggleBold() {
 							<label class="form-check-label small" for="marginLinesToggle">Margine</label>
 						</div>
 					</div>
-					<div class="toolbar-group d-flex align-items-center gap-2 ">
+					<div class="toolbar-group d-flex align-items-center gap-2">
 						<div class="form-check form-switch mb-0">
 							<input
 								class="form-check-input"
@@ -910,7 +898,7 @@ function toggleBold() {
 							<strong>{totalWordsInDoc}</strong>
 						{/if}
 					</span>
-					<span class="info ">{wordCountLabel}</span>
+					<span class="info">{wordCountLabel}</span>
 					<span class="info">Stranica: {currentPage} / {totalPages}</span>
 				</div>
 
@@ -935,7 +923,7 @@ function toggleBold() {
 						<div class="info mb-1">Rezultata: {searchResults.length}</div>
 						{#each searchResults as r}
 							<div class="search-result-item" onclick={() => goToResult(r)}>
-								<span class="badge bg-secondary me-2 ">str. {r.page}</span>{r.context}
+								<span class="badge bg-secondary me-2">str. {r.page}</span>{r.context}
 							</div>
 						{/each}
 					</div>
@@ -1054,7 +1042,7 @@ function toggleBold() {
 						<div class="input-group input-group-sm" style="width: auto;">
 							<span class="input-group-text">Chunks</span>
 							<!-- <label class="fw-bold m-1" for="">{podesavanja.paceChunkSize}</label> -->
-							 <input
+							<input
 								type="number"
 								min="1"
 								step="1"
@@ -1067,20 +1055,17 @@ function toggleBold() {
 
 						<!-- BOLD SWITCH -->
 
-
 						<div class="btn-group" role="group">
-    <input 
-        type="checkbox" 
-        class="btn-check" 
-        id="btnBoldToggle" 
-        autocomplete="off" 
-        checked={podesavanja.bold}
-        onchange={toggleBold}
-    >
-    <label class="btn btn-outline-success fw-bold" for="btnBoldToggle">
-        B
-    </label>
-</div>
+							<input
+								type="checkbox"
+								class="btn-check"
+								id="btnBoldToggle"
+								autocomplete="off"
+								checked={podesavanja.bold}
+								onchange={toggleBold}
+							/>
+							<label class="btn btn-outline-success fw-bold" for="btnBoldToggle"> B </label>
+						</div>
 
 						<button class="btn btn-outline-primary btn-sm" type="button" onclick={startPacer}
 							>🎯 Pacer + 🏁 Race</button
@@ -1112,7 +1097,7 @@ function toggleBold() {
 	{/if}
 
 	<div
-		class="reader-content-wrap shadow-lg "
+		class="reader-content-wrap shadow-lg"
 		id="reader-content-wrap"
 		onclick={handlePdfTap}
 		style="width: {podesavanja.readerWidthPercent}%; margin: 0 auto; clip-path: {marginLinesEnabled &&
@@ -1131,33 +1116,27 @@ function toggleBold() {
 			></div>
 		{/if}
 
-		
 		{#if currentFileName}
-		<div
-			bind:this={readerContentEl}
-			class="reader-content border rounded p-3 mb-3 border border-3 border-info"
-			style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important;font-Family:{podesavanja.fontFamily};font-weight: {podesavanja.bold
-				? 'bold'
-				: 'normal'}; line-height:{podesavanja.lineSpacing}"
-		>
-			{#each words as word, i}
-				<span
-					class="word"
-					class:pos-mark={posIndex === i}
-					class:start-mark={startIndex === i}
-					class:end-mark={endIndex === i}
-					class:pace-mark={isInPaceChunk(i)}
-					onclick={() => wordClick(i)}>{word}</span
-				>{' '}
-			{/each}
-		</div>
-		
-		
+			<div
+				bind:this={readerContentEl}
+				class="reader-content border rounded p-3 mb-3 border border-3 border-info"
+				style="font-size: {podesavanja.fontSize}px;background-color:{podesavanja.readerBack} !important;font-Family:{podesavanja.fontFamily};font-weight: {podesavanja.bold
+					? 'bold'
+					: 'normal'}; line-height:{podesavanja.lineSpacing}"
+			>
+				{#each words as word, i}
+					<span
+						class="word"
+						class:pos-mark={posIndex === i}
+						class:start-mark={startIndex === i}
+						class:end-mark={endIndex === i}
+						class:pace-mark={isInPaceChunk(i)}
+						onclick={() => wordClick(i)}>{word}</span
+					>{' '}
+				{/each}
+			</div>
 		{/if}
-	
 	</div>
-
-
 
 	{#if currentFileName}
 		<div class="d-flex justify-content-center mb-3">
