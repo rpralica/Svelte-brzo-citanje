@@ -35,10 +35,10 @@
 	let fontColor = localStore('fontColor', '#000000');
 	let fontSize = localStore('fontSize', 25);
 	let bg = localStore('bg', '#f4ecd8');
-	let wpm = $state(300);
-	let lineSpacing=localStore('lineSpacing',1.5)
-	let chunkSize =localStore('chunkSize',1); // 1 = klasican RSVP (rijec po rijec), vise = grupe rijeci
-	let rows = localStore('rows',1); // 1 ili 2 reda, grupa rijeci vazi po redu
+	let wpm = localStore('wpm', 300);
+	let lineSpacing = localStore('lineSpacing', 1.5);
+	let chunkSize = localStore('chunkSize', 1); // 1 = klasican RSVP (rijec po rijec), vise = grupe rijeci
+	let rows = localStore('rows', 1); // 1 ili 2 reda, grupa rijeci vazi po redu
 
 	let running = $state(false);
 	let currentIndex = $state(0); // indeks trenutne grupe (chunk)
@@ -46,11 +46,14 @@
 	let intervalId = null;
 	let finished = $state(false);
 
-	function resetFont() {
+	function resetRsvp() {
 		bg.value = '#f4ecd8';
 		fontSize.value = 25;
 		fontColor.value = '#000000';
 		podesavanja.fontFamily = 'Lexend';
+		chunkSize.value = 1;
+		rows.value = 1;
+		wpm.value = 300;
 	}
 
 	// Funkcija za učitavanje TXT fajla i prepisivanje preko starog teksta
@@ -71,27 +74,27 @@
 	}
 
 	function totalChunks() {
-	return Math.ceil(words.length / (chunkSize.value * rows));
-}
-
-function chunkText(chunkIdx) {
-	const step = chunkSize.value * rows.value;
-	const start = chunkIdx * step;
-	const lines = [];
-
-	for (let r = 0; r < rows.value; r++) {
-		const s = start + r * chunkSize.value;
-		if (s >= words.length) break; // nema vise rijeci za ovaj red
-		const e = Math.min(words.length, s + chunkSize.value);
-		lines.push(words.slice(s, e).join(' '));
+		return Math.ceil(words.length / (chunkSize.value * rows.value));
 	}
-	return lines.join('\n');
-}
 
-function intervalMs() {
-	const w = Math.max(50, Number(wpm) || 300);
-	return (60000 / w) * chunkSize.value * rows.value;
-}
+	function chunkText(chunkIdx) {
+		const step = chunkSize.value * rows.value;
+		const start = chunkIdx * step;
+		const lines = [];
+
+		for (let r = 0; r < rows.value; r++) {
+			const s = start + r * chunkSize.value;
+			if (s >= words.length) break; // nema vise rijeci za ovaj red
+			const e = Math.min(words.length, s + chunkSize.value);
+			lines.push(words.slice(s, e).join(' '));
+		}
+		return lines.join('\n');
+	}
+
+	function intervalMs() {
+		const w = Math.max(50, Number(wpm.value) || 300);
+		return (60000 / w) * chunkSize.value * rows.value;
+	}
 
 	function tick() {
 		currentIndex = currentIndex + 1;
@@ -166,69 +169,79 @@ function intervalMs() {
 			</div>
 		</div>
 
-		<div class="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
-			<div class="input-group input-group-sm" style="width: auto;">
-				<span class="input-group-text fw-bold">WPM</span>
-				<input
-					type="number"
-					min="50"
-					step="10"
-					class="form-control fw-bold"
-					style="width: 80px;"
-					bind:value={wpm}
-				/>
-			</div>
-			<div class="input-group input-group-sm" style="width: auto;">
-				<span class="input-group-text fw-bold">Chunks</span>
-				<select class="form-select fw-bold" style="width: 65px;" bind:value={chunkSize.value}>
-					{#each Array.from({ length: 10 }, (_, k) => k + 1) as n}
-						<option value={n}>{n}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="input-group input-group-sm" style="width: auto;">
-	<span class="input-group-text fw-bold">Rows</span>
-	<select class="form-select fw-bold" style="width: 65px;" bind:value={rows.value}>
-		<option value={1}>1</option>
-		<option value={2}>2</option>
-		<option value={3}>3</option>
-	</select>
-</div>
+		<!-- TOOLBAR -->
 
+		<div class="d-flex flex-column gap-2 mb-3">
+			<fieldset class="border border-success border-2 p-3 rounded mt-3">
+				<!-- RED 1: vjezba -->
+				<div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+					<div class="input-group input-group-sm" style="width: auto;">
+						<span class="input-group-text fw-bold">WPM</span>
+						<input
+							type="number"
+							min="50"
+							step="10"
+							class="form-control fw-bold"
+							style="width: 80px;"
+							bind:value={wpm.value}
+						/>
+					</div>
 
-	<div class="input-group input-group-sm" style="width: auto;">
-				<span class="input-group-text fw-bold">Ln Sp</span>
-					<input
-						bind:value={lineSpacing.value}
-						type="number"
-						min="1.2"
-						max="2.5"
-						step="0.1"
-						class="form-control  ms-auto"
-					/>
-			</div>
+					<div class="input-group input-group-sm" style="width: auto;">
+						<span class="input-group-text fw-bold">Chunks</span>
+						<select class="form-select fw-bold" style="width: 65px;" bind:value={chunkSize.value}>
+							{#each Array.from({ length: 10 }, (_, k) => k + 1) as n}
+								<option value={n}>{n}</option>
+							{/each}
+						</select>
+					</div>
 
+					<div class="input-group input-group-sm" style="width: auto;">
+						<span class="input-group-text fw-bold">Rows</span>
+						<select class="form-select fw-bold" style="width: 65px;" bind:value={rows.value}>
+							<option value={1}>1</option>
+							<option value={2}>2</option>
+							<option value={3}>3</option>
+						</select>
+					</div>
 
+					<div class="input-group input-group-sm" style="width: auto;">
+						<span class="input-group-text fw-bold">Ln Sp</span>
+						<input
+							bind:value={lineSpacing.value}
+							type="number"
+							min="1.2"
+							max="2.5"
+							step="0.1"
+							class="form-control fw-bold"
+							style="width: 70px;"
+						/>
+					</div>
 
+					<button
+						class="btn btn-warning btn-sm"
+						type="button"
+						onclick={start}
+						disabled={words.length === 0}>▶ Start</button
+					>
+				</div>
+			</fieldset>
 
-			<button
-				class="btn btn-warning btn-sm"
-				type="button"
-				onclick={start}
-				disabled={words.length === 0}>▶ Start</button
-			>
-			<fieldset class="border rounded border border-primary p-2">
-				<div class="input-group input-group-sm align-items-center flex-nowrap" style="width: auto;">
-					<span class="input-group-text fw-bold">Color</span>
-					<input
-						bind:value={fontColor.value}
-						style="width: 4rem; height: 2.2rem;"
-						type="color"
-						class="form-control"
-					/>
+			<!-- RED 2: izgled -->
+			<fieldset class="border border-2 rounded border-primary p-2">
+				<div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+					<div class="input-group input-group-sm" style="width: auto;">
+						<span class="input-group-text fw-bold">Color</span>
+						<input
+							bind:value={fontColor.value}
+							style="width: 4rem; height: 2.2rem;"
+							type="color"
+							class="form-control"
+						/>
+					</div>
 
 					<!-- FONT PICKER SEKCIJA -->
-					<div class="d-flex align-items-center ms-2 me-1">
+					<div class="d-flex align-items-center">
 						<span class="fw-bold small me-1">Font</span>
 						<div class="font-picker">
 							<button
@@ -249,7 +262,7 @@ function intervalMs() {
 											style="font-family: {f.vrednost};"
 											onclick={() => {
 												izaberiFont(f);
-												otvoren = false; /* Zatvara listu nakon izbora */
+												otvoren = false;
 											}}
 										>
 											{f.naziv}
@@ -261,7 +274,7 @@ function intervalMs() {
 					</div>
 					<!-- KRAJ FONT PICKERA -->
 
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+					<div class="input-group input-group-sm" style="width: auto;">
 						<span class="input-group-text fw-bold">FS</span>
 						<input
 							bind:value={fontSize.value}
@@ -272,7 +285,7 @@ function intervalMs() {
 						/>
 					</div>
 
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+					<div class="input-group input-group-sm" style="width: auto;">
 						<span class="input-group-text fw-bold">BG</span>
 						<input
 							bind:value={bg.value}
@@ -282,10 +295,7 @@ function intervalMs() {
 						/>
 					</div>
 
-					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-						<!-- <span class="input-group-text fw-bold">Reset</span> -->
-						<button onclick={resetFont} class="btn btn-primary btn-sm">Reset</button>
-					</div>
+					<button onclick={resetRsvp} class="btn btn-primary btn-sm">Reset</button>
 				</div>
 			</fieldset>
 		</div>
@@ -294,7 +304,8 @@ function intervalMs() {
 			<button class="btn btn-danger btn-sm" type="button" onclick={stop}>⏹ Stop</button>
 		</div>
 		<div class="text-center text-danger mb-2">
-			Chunk {currentIndex + 1} / {totalChunks()} — {wpm} wpm, grupa: {chunkSize.value}
+			Chunk {currentIndex + 1} / {totalChunks()} — {wpm.value} wpm, grupa: {chunkSize.value},
+			redova: {rows.value}
 		</div>
 	{/if}
 
@@ -311,25 +322,26 @@ function intervalMs() {
 			class="rsvp-word">{currentDisplay || (running ? '' : '...')}</span
 		>
 	</div>
+	<!-- END TOOLBAR -->
 </fieldset>
 
 <style>
-.rsvp-screen {
-	min-height: 100px;   /* bilo: height: 100px */
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border: 1px solid #ddd;
-	border-radius: 6px;
-	background: #fff;
-}
-.rsvp-word {
-	font-size: 2rem;
-	font-weight: bold;
-	color: #212529;
-	white-space: pre-line;  /* \n postaje novi red */
-	text-align: center;
-}
+	.rsvp-screen {
+		min-height: 100px; /* bilo: height: 100px */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid #ddd;
+		border-radius: 6px;
+		background: #fff;
+	}
+	.rsvp-word {
+		font-size: 2rem;
+		font-weight: bold;
+		color: #212529;
+		white-space: pre-line; /* \n postaje novi red */
+		text-align: center;
+	}
 	.font-picker {
 		position: relative;
 		display: inline-block;
