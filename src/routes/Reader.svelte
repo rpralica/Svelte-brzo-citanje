@@ -425,10 +425,10 @@
 		return Math.max(1, Number(podesavanja.paceChunkSize) || 1);
 	}
 
-	function paceIntervalMs() {
-		const wpm = Math.max(50, Number(paceWpm) || 300);
-		return (60000 / wpm) * paceChunk();
-	}
+function paceIntervalMs() {
+	const wpm = Math.max(50, Number(paceWpm.value) || 300);
+	return (60000 / wpm) * paceChunk();
+}
 
 	function paceTotalChunks() {
 		return Math.ceil(words.length / paceChunk());
@@ -476,6 +476,7 @@
 				paceAutoNextTimeoutId = setTimeout(() => {
 					paceAutoNextTimeoutId = null;
 					if (paceActive && !isPaused && currentPage < totalPages) {
+					if (raceActive) raceLastTime += 5000;
 						pdfNext();
 					}
 				}, 5000);
@@ -758,30 +759,10 @@
 
 	// Funkcija koja se okida na tap/klik po PDF kontejneru
 	function handlePdfTap() {
-		// Reagujemo samo ako je trka ili pacer zapravo aktivan
-		if (!paceActive && !raceActive) return;
-
-		// Prebaci pauzu (suprotno od trenutnog stanja)
-		isPaused = !isPaused;
-
-		if (isPaused) {
-			// Ako je pauzirano, zaustavi interval pacera ako radi
-			if (paceIntervalId !== null) {
-				clearInterval(paceIntervalId);
-				paceIntervalId = null;
-			}
-			// Ovdje možeš dodati i pauziranje štoperice za trku ako je potrebno
-		} else {
-			// Ako se nastavlja, ponovo pokreni pacer interval
-			if (paceActive) {
-				startPaceIntervalInternal();
-			}
-			// Ovdje nastavi mjerenje vremena za trku
-			if (raceActive) {
-				raceLastTime = Date.now(); // da ti ne računa pauzu u vrijeme trke
-			}
-		}
-	}
+	if (!paceActive && !raceActive) return;
+	if (isPaused) resumeSession();
+	else pauseSession();
+}
 </script>
 
 <div class="container-fluid">
