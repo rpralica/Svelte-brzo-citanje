@@ -1,22 +1,20 @@
 <script>
 	import { localStore, readTxtFile } from '$lib/functionsHelper/myFunctions.svelte';
 	import { CRVENKAPICA } from '$lib/tekst_primjeri';
-	import { podesavanja, changeFont,setFontFamily } from '$lib/functionsHelper/settings.svelte'; // Prilagodi putanju do tvoje funkcije
+	import { podesavanja, changeFont, setFontFamily } from '$lib/functionsHelper/settings.svelte'; // Prilagodi putanju do tvoje funkcije
 
 	// --- RSVP vjezba - rijeci (ili grupe rijeci) se smjenjuju na sredini ekrana ---
 	let inputText = $state(CRVENKAPICA);
-	
+
 	let words = $derived.by(() => {
 		const trimmed = inputText.trim();
 		if (trimmed.length === 0) return [];
 		return trimmed.split(/\s+/);
 	});
 
-
-
 	//FONT FAMILY
-let otvoren = $state(false);
-const fontovi = [
+	let otvoren = $state(false);
+	const fontovi = [
 		{ naziv: 'Arial', vrednost: 'Arial, sans-serif' },
 		{ naziv: 'Verdana', vrednost: 'Verdana, sans-serif' },
 		{ naziv: 'Century Gothic', vrednost: 'Century Gothic, sans-serif' },
@@ -29,7 +27,7 @@ const fontovi = [
 	let trenutniNaziv = $derived(
 		fontovi.find((f) => f.vrednost === podesavanja.fontFamily)?.naziv || 'Izaberi font'
 	);
-function izaberiFont(f) {
+	function izaberiFont(f) {
 		setFontFamily(f.vrednost); // Poziva funkciju iz tvog store-a koja upisuje i u localStorage
 		otvoren = false;
 	}
@@ -38,7 +36,9 @@ function izaberiFont(f) {
 	let fontSize = localStore('fontSize', 25);
 	let bg = localStore('bg', '#f4ecd8');
 	let wpm = $state(300);
-	let chunkSize = $state(1); // 1 = klasican RSVP (rijec po rijec), vise = grupe rijeci
+	let lineSpacing=localStore('lineSpacing',1.5)
+	let chunkSize =localStore('chunkSize',1); // 1 = klasican RSVP (rijec po rijec), vise = grupe rijeci
+	let rows = localStore('rows',1); // 1 ili 2 reda, grupa rijeci vazi po redu
 
 	let running = $state(false);
 	let currentIndex = $state(0); // indeks trenutne grupe (chunk)
@@ -50,7 +50,7 @@ function izaberiFont(f) {
 		bg.value = '#f4ecd8';
 		fontSize.value = 25;
 		fontColor.value = '#000000';
-		podesavanja.fontFamily='Lexend';
+		podesavanja.fontFamily = 'Lexend';
 	}
 
 	// Funkcija za učitavanje TXT fajla i prepisivanje preko starog teksta
@@ -71,19 +71,27 @@ function izaberiFont(f) {
 	}
 
 	function totalChunks() {
-		return Math.ceil(words.length / chunkSize);
-	}
+	return Math.ceil(words.length / (chunkSize.value * rows));
+}
 
-	function chunkText(chunkIdx) {
-		const start = chunkIdx * chunkSize;
-		const end = Math.min(words.length, start + chunkSize);
-		return words.slice(start, end).join(' ');
-	}
+function chunkText(chunkIdx) {
+	const step = chunkSize.value * rows.value;
+	const start = chunkIdx * step;
+	const lines = [];
 
-	function intervalMs() {
-		const w = Math.max(50, Number(wpm) || 300);
-		return (60000 / w) * chunkSize;
+	for (let r = 0; r < rows.value; r++) {
+		const s = start + r * chunkSize.value;
+		if (s >= words.length) break; // nema vise rijeci za ovaj red
+		const e = Math.min(words.length, s + chunkSize.value);
+		lines.push(words.slice(s, e).join(' '));
 	}
+	return lines.join('\n');
+}
+
+function intervalMs() {
+	const w = Math.max(50, Number(wpm) || 300);
+	return (60000 / w) * chunkSize.value * rows.value;
+}
 
 	function tick() {
 		currentIndex = currentIndex + 1;
@@ -118,11 +126,10 @@ function izaberiFont(f) {
 		currentIndex = 0;
 		currentDisplay = '';
 		finished = false;
-		
 	}
 </script>
 
-<fieldset class="border border-primary border-4  p-3 rounded mt-3">
+<fieldset class="border border-primary border-4 p-3 rounded mt-3">
 	<legend class="text-center text-success fw-bold fst-italic"
 		>RSVP - brzo prepoznavanje rijeci</legend
 	>
@@ -141,12 +148,6 @@ function izaberiFont(f) {
 						onchange={handleFileSelect}
 					/>
 				</div>
-
-				
-
-			
-
-
 			</div>
 
 			<textarea
@@ -156,9 +157,9 @@ function izaberiFont(f) {
 				placeholder="Zalijepi tekst ovdje ili učitaj fajl..."
 				bind:value={inputText}></textarea>
 			<div class="row">
-				<div class="small  mt-1 col">Rijeci: {words.length}</div>
+				<div class="small mt-1 col">Rijeci: {words.length}</div>
 				<div class="col d-flex justify-content-end">
-					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2  " 
+					<button onclick={() => (inputText = '')} class="btn btn-sm btn-outline-danger mt-2"
 						>🎯Clear</button
 					>
 				</div>
@@ -172,19 +173,44 @@ function izaberiFont(f) {
 					type="number"
 					min="50"
 					step="10"
-					class="form-control fw-bold "
+					class="form-control fw-bold"
 					style="width: 80px;"
 					bind:value={wpm}
 				/>
 			</div>
 			<div class="input-group input-group-sm" style="width: auto;">
-				<span class="input-group-text fw-bold">Grupa rijeci</span>
-				<select class="form-select fw-bold" style="width: 65px;" bind:value={chunkSize}>
+				<span class="input-group-text fw-bold">Chunks</span>
+				<select class="form-select fw-bold" style="width: 65px;" bind:value={chunkSize.value}>
 					{#each Array.from({ length: 10 }, (_, k) => k + 1) as n}
 						<option value={n}>{n}</option>
 					{/each}
 				</select>
 			</div>
+			<div class="input-group input-group-sm" style="width: auto;">
+	<span class="input-group-text fw-bold">Rows</span>
+	<select class="form-select fw-bold" style="width: 65px;" bind:value={rows.value}>
+		<option value={1}>1</option>
+		<option value={2}>2</option>
+		<option value={3}>3</option>
+	</select>
+</div>
+
+
+	<div class="input-group input-group-sm" style="width: auto;">
+				<span class="input-group-text fw-bold">Ln Sp</span>
+					<input
+						bind:value={lineSpacing.value}
+						type="number"
+						min="1.2"
+						max="2.5"
+						step="0.1"
+						class="form-control  ms-auto"
+					/>
+			</div>
+
+
+
+
 			<button
 				class="btn btn-warning btn-sm"
 				type="button"
@@ -192,78 +218,83 @@ function izaberiFont(f) {
 				disabled={words.length === 0}>▶ Start</button
 			>
 			<fieldset class="border rounded border border-primary p-2">
-    <div class="input-group input-group-sm align-items-center flex-nowrap" style="width: auto;">
-        <span class="input-group-text fw-bold">Color</span>
-        <input
-            bind:value={fontColor.value}
-            style="width: 4rem; height: 2.2rem;"
-            type="color"
-            class="form-control"
-        />
+				<div class="input-group input-group-sm align-items-center flex-nowrap" style="width: auto;">
+					<span class="input-group-text fw-bold">Color</span>
+					<input
+						bind:value={fontColor.value}
+						style="width: 4rem; height: 2.2rem;"
+						type="color"
+						class="form-control"
+					/>
 
-        <!-- FONT PICKER SEKCIJA -->
-        <div class="d-flex align-items-center ms-2 me-1">
-            <span class="fw-bold small me-1">Font</span>
-            <div class="font-picker">
-                <button
-                    type="button"
-                    class="btn btn-outline-info btn-sm"
-                    onclick={() => (otvoren = !otvoren)}
-                    style="font-family: {podesavanja.fontFamily};"
-                >
-                    <span>{trenutniNaziv}</span>
-                    <span class="strelica">▼</span>
-                </button>
+					<!-- FONT PICKER SEKCIJA -->
+					<div class="d-flex align-items-center ms-2 me-1">
+						<span class="fw-bold small me-1">Font</span>
+						<div class="font-picker">
+							<button
+								type="button"
+								class="btn btn-outline-info btn-sm"
+								onclick={() => (otvoren = !otvoren)}
+								style="font-family: {podesavanja.fontFamily};"
+							>
+								<span>{trenutniNaziv}</span>
+								<span class="strelica">▼</span>
+							</button>
 
-                {#if otvoren}
-                    <div class="dropdown-lista">
-                        {#each fontovi as f, i (i)}
-                            <div
-                                class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
-                                style="font-family: {f.vrednost};"
-                                onclick={() => {
-                                    izaberiFont(f);
-                                    otvoren = false; /* Zatvara listu nakon izbora */
-                                }}
-                            >
-                                {f.naziv}
-                            </div>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
-        </div>
-        <!-- KRAJ FONT PICKERA -->
+							{#if otvoren}
+								<div class="dropdown-lista">
+									{#each fontovi as f, i (i)}
+										<div
+											class="font-opcija {podesavanja.fontFamily === f.vrednost ? 'aktivan' : ''}"
+											style="font-family: {f.vrednost};"
+											onclick={() => {
+												izaberiFont(f);
+												otvoren = false; /* Zatvara listu nakon izbora */
+											}}
+										>
+											{f.naziv}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</div>
+					<!-- KRAJ FONT PICKERA -->
 
-        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-            <span class="input-group-text fw-bold">FS</span>
-            <input
-                bind:value={fontSize.value}
-                style="width: 4rem;"
-                type="number"
-                min="10"
-                class="form-control fw-bold"
-            />
-        </div>
+					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+						<span class="input-group-text fw-bold">FS</span>
+						<input
+							bind:value={fontSize.value}
+							style="width: 4rem;"
+							type="number"
+							min="10"
+							class="form-control fw-bold"
+						/>
+					</div>
 
-        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-            <span class="input-group-text fw-bold">BG</span>
-            <input bind:value={bg.value} style="width: 4rem; height: 2.2rem;" type="color" class="form-control" />
-        </div>
+					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+						<span class="input-group-text fw-bold">BG</span>
+						<input
+							bind:value={bg.value}
+							style="width: 4rem; height: 2.2rem;"
+							type="color"
+							class="form-control"
+						/>
+					</div>
 
-        <div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
-            <span class="input-group-text fw-bold">Reset</span>
-            <button onclick={resetFont} class="btn btn-primary btn-sm">Reset</button>
-        </div>
-    </div>
-</fieldset>
+					<div class="input-group input-group-sm col-2 ms-1" style="width: auto;">
+						<!-- <span class="input-group-text fw-bold">Reset</span> -->
+						<button onclick={resetFont} class="btn btn-primary btn-sm">Reset</button>
+					</div>
+				</div>
+			</fieldset>
 		</div>
 	{:else}
-		<div class="text-center mb-2 ">
+		<div class="text-center mb-2">
 			<button class="btn btn-danger btn-sm" type="button" onclick={stop}>⏹ Stop</button>
 		</div>
 		<div class="text-center text-danger mb-2">
-			Chunk {currentIndex + 1} / {totalChunks()} — {wpm} wpm, grupa: {chunkSize}
+			Chunk {currentIndex + 1} / {totalChunks()} — {wpm} wpm, grupa: {chunkSize.value}
 		</div>
 	{/if}
 
@@ -276,66 +307,70 @@ function izaberiFont(f) {
 
 	<div class="rsvp-screen border border-3 border-info" style="background-color:{bg.value}">
 		<span
-			style="color:{fontColor.value};font-size:{fontSize.value}px;font-Family:{podesavanja.fontFamily}"
+			style="color:{fontColor.value};font-size:{fontSize.value}px;font-Family:{podesavanja.fontFamily};line-height:{lineSpacing.value}"
 			class="rsvp-word">{currentDisplay || (running ? '' : '...')}</span
 		>
 	</div>
 </fieldset>
 
 <style>
-	.rsvp-screen {
-		height: 100px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid #ddd;
-		border-radius: 6px;
-		background: #fff;
-	}
-	.rsvp-word {
-		font-size: 2rem;
-		font-weight: bold;
-		color: #212529;
-	}
+.rsvp-screen {
+	min-height: 100px;   /* bilo: height: 100px */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	background: #fff;
+}
+.rsvp-word {
+	font-size: 2rem;
+	font-weight: bold;
+	color: #212529;
+	white-space: pre-line;  /* \n postaje novi red */
+	text-align: center;
+}
 	.font-picker {
-        position: relative; 
-        display: inline-block;
-    }
+		position: relative;
+		display: inline-block;
+	}
 
-    /* Padajuća lista prilagođena za sve teme */
-    .dropdown-lista {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        z-index: 1050;
-        background-color: var(--bs-body-bg, #fff); /* Automatski prati Bootstrap pozadinu (crna/bijela) */
-        color: var(--bs-body-color, #212529);     /* Automatski prati boju teksta */
-        border: 1px solid var(--bs-border-color, #ccc);
-        border-radius: 4px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        max-height: 200px;
-        overflow-y: auto;
-        min-width: 140px;
-        margin-top: 4px;
-    }
+	/* Padajuća lista prilagođena za sve teme */
+	.dropdown-lista {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 1050;
+		background-color: var(
+			--bs-body-bg,
+			#fff
+		); /* Automatski prati Bootstrap pozadinu (crna/bijela) */
+		color: var(--bs-body-color, #212529); /* Automatski prati boju teksta */
+		border: 1px solid var(--bs-border-color, #ccc);
+		border-radius: 4px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		max-height: 200px;
+		overflow-y: auto;
+		min-width: 140px;
+		margin-top: 4px;
+	}
 
-    .font-opcija {
-        padding: 8px 12px;
-        cursor: pointer;
-        white-space: nowrap;
-        background-color: transparent;
-    }
+	.font-opcija {
+		padding: 8px 12px;
+		cursor: pointer;
+		white-space: nowrap;
+		background-color: transparent;
+	}
 
-    /* Hover efekt koji radi i u light i u dark mode-u */
-    .font-opcija:hover {
-        background-color: var(--bs-tertiary-bg, #e9ecef);
-        color: var(--bs-emphasis-color, #000);
-    }
+	/* Hover efekt koji radi i u light i u dark mode-u */
+	.font-opcija:hover {
+		background-color: var(--bs-tertiary-bg, #e9ecef);
+		color: var(--bs-emphasis-color, #000);
+	}
 
-    .font-opcija.aktivan {
-        background-color: var(--bs-primary, #0d6efd);
-        color: #fff !important; /* Kada je aktivan, tekst je obavezno bijel da se vidi */
-        font-weight: bold;
-    }
-	
+	.font-opcija.aktivan {
+		background-color: var(--bs-primary, #0d6efd);
+		color: #fff !important; /* Kada je aktivan, tekst je obavezno bijel da se vidi */
+		font-weight: bold;
+	}
 </style>
