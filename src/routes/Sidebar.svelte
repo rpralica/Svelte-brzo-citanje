@@ -379,9 +379,7 @@
 		line-height: 0.2;
 		
 	}
-	.qt-btn:active {
-		background: #e0e0e0;
-	}
+	
 	.qt-settings {
 		margin-top: auto;
 		width: 40px;
