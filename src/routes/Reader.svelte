@@ -1,6 +1,7 @@
 <script>
 	/* global Swal*/
 	import { onMount } from 'svelte';
+	import JSZip from 'jszip';
 	import { podesavanja, setPaceChunkSize } from '$lib/functionsHelper/settings.svelte.js';
 	import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
 	//Podešavanje
@@ -43,7 +44,7 @@
 	}
 
 	onMount(() => {
-		loadSettings();
+		
 
 		// Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
 		const handleVisibilityChange = () => {
@@ -97,7 +98,7 @@
 		saveSetting('margin_lines_enabled', marginLinesEnabled);
 	}
 
-	// --- Tekst / rijeci (trenutna PDF stranica) ---
+	// --- Tekst / rijeci (trenutna stranica) ---
 	let words = $state([]);
 
 	function splitToWords(text) {
@@ -175,7 +176,7 @@
 
 	async function savePosition() {
 		if (!currentFileName) {
-			Swal.fire('Greška', 'Prvo učitaj PDF fajl.', 'warning');
+			Swal.fire('Greška', 'Prvo učitaj fajl.', 'warning');
 			return;
 		}
 
@@ -216,7 +217,7 @@
 
 	async function goToSavedPosition() {
 		if (!currentFileName) {
-			Swal.fire('Greška', 'Prvo učitaj PDF fajl.', 'warning');
+			Swal.fire('Greška', 'Prvo učitaj fajl.', 'warning');
 			return;
 		}
 
@@ -230,6 +231,24 @@
 
 		await renderPdfPage(parseInt(positions[safeKey], 10));
 		infoMessage = '';
+	}
+
+	// --- Reset stanja pri učitavanju novog fajla (zajedničko za PDF, EPUB i TXT) ---
+	function resetDocumentState() {
+		currentPage = 1;
+		posIndex = null;
+		startIndex = null;
+		endIndex = null;
+		pagesWordsCache = [];
+		searchReady = false;
+		searchResults = [];
+		searchQuery = '';
+		totalWordsInDoc = 0;
+		raceActive = false;
+		raceStats = [];
+		raceCheckpoints = [];
+		stopPacer();
+		isPaused = false;
 	}
 
 	// --- Učitavanje .pdf ---
@@ -257,20 +276,7 @@
 			pdfDoc = await lib.getDocument({ data: arrayBuffer }).promise;
 			totalPages = pdfDoc.numPages;
 			currentFileName = file.name;
-			currentPage = 1;
-			posIndex = null;
-			startIndex = null;
-			endIndex = null;
-			pagesWordsCache = [];
-			searchReady = false;
-			searchResults = [];
-			searchQuery = '';
-			totalWordsInDoc = 0;
-			raceActive = false;
-			raceStats = [];
-			raceCheckpoints = [];
-			stopPacer();
-			isPaused = false;
+			resetDocumentState();
 
 			let targetPage = 1;
 			const safeKey = sanitizeKey(currentFileName);
@@ -303,6 +309,107 @@
 		}
 	}
 
+	// --- Učitavanje .epub i .txt ---
+	// Oba formata se sijeku na stranice od po 300 riječi. PDF ostaje onako kako idu njegove stranice.
+	const WORDS_PER_PAGE = 300;
+
+	// Tekst -> niz stranica, gdje je svaka stranica niz riječi
+	function splitIntoPages(text) {
+		const allWords = splitToWords(text);
+		const pages = [];
+		for (let i = 0; i < allWords.length; i += WORDS_PER_PAGE) {
+			pages.push(allWords.slice(i, i + WORDS_PER_PAGE));
+		}
+		return pages;
+	}
+
+	async function loadTxt(file) {
+		return splitIntoPages(await file.text());
+	}
+
+	// EPUB je ZIP sa XHTML fajlovima. Svako poglavlje se siječe posebno,
+	// pa stranica nikad ne prelazi granicu poglavlja.
+	async function loadEpub(file) {
+		const zip = await JSZip.loadAsync(file);
+		const parser = new DOMParser();
+
+		async function readDoc(path, type) {
+			const entry = zip.file(path);
+			if (!entry) return null;
+			return parser.parseFromString(await entry.async('string'), type);
+		}
+
+		// 1. container.xml kaže gdje je .opf fajl
+		const container = await readDoc('META-INF/container.xml', 'application/xml');
+		const opfPath = container.querySelector('rootfile').getAttribute('full-path');
+		const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
+
+		// 2. .opf: manifest (id -> href) i spine (redoslijed poglavlja)
+		const opf = await readDoc(opfPath, 'application/xml');
+		const manifest = {};
+		opf.querySelectorAll('manifest > item').forEach((item) => {
+			manifest[item.getAttribute('id')] = item.getAttribute('href');
+		});
+		const hrefs = [...opf.querySelectorAll('spine > itemref')]
+			.map((ref) => manifest[ref.getAttribute('idref')])
+			.filter(Boolean);
+
+		// 3. za svako poglavlje izvuci tekst i isijeci ga na stranice
+		const pages = [];
+		for (const href of hrefs) {
+			// riješi relativne putanje i %20 itd.
+			const path = decodeURIComponent(new URL(href, 'http://x/' + opfDir).pathname.slice(1));
+			const doc = await readDoc(path, 'text/html');
+			if (!doc || !doc.body) continue;
+
+			doc.querySelectorAll('script, style').forEach((el) => el.remove());
+			// razmak poslije blok elemenata, da se riječi iz različitih paragrafa ne slijepe
+			doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr').forEach((el) => {
+				el.insertAdjacentText('afterend', ' ');
+			});
+
+			pages.push(...splitIntoPages(doc.body.textContent));
+		}
+		return pages;
+	}
+
+	async function loadTextFile(file) {
+		try {
+			const ext = file.name.split('.').pop().toLowerCase();
+			const pages = ext === 'epub' ? await loadEpub(file) : await loadTxt(file);
+
+			if (pages.length === 0) {
+				Swal.fire('Greška', 'U fajlu nije pronađen nikakav tekst.', 'error');
+				return;
+			}
+
+			pdfDoc = null; // nema PDF dokumenta, sve stranice su već spremne u kešu
+			totalPages = pages.length;
+			currentFileName = file.name;
+			resetDocumentState();
+
+			pagesWordsCache = pages;
+			searchReady = true; // pretraga radi odmah, nema pozadinske ekstrakcije
+			totalWordsInDoc = pages.reduce((sum, p) => sum + p.length, 0);
+
+			let targetPage = 1;
+			const safeKey = sanitizeKey(currentFileName);
+			const positions = getSavedPositions();
+			if (positions[safeKey] !== undefined) {
+				targetPage = parseInt(positions[safeKey], 10);
+			}
+
+			await renderPdfPage(targetPage);
+		} catch (e) {
+			console.error('Greška pri učitavanju fajla:', e);
+			Swal.fire(
+				'Greška',
+				'Neuspješno učitavanje fajla. Fajl je možda oštećen ili neispravnog formata.',
+				'error'
+			);
+		}
+	}
+
 	async function extractAllPages() {
 		try {
 			for (let p = 1; p <= totalPages; p++) {
@@ -320,7 +427,7 @@
 
 	async function renderPdfPage(pageNum) {
 		try {
-			if (!pdfDoc) return;
+			if (!currentFileName) return;
 			if (pageNum < 1) pageNum = 1;
 			if (pageNum > totalPages) pageNum = totalPages;
 			currentPage = pageNum;
@@ -353,7 +460,7 @@
 
 	function startRace() {
 		if (!currentFileName) {
-			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+			Swal.fire('Info', 'Prvo učitaj fajl.', 'info');
 			return;
 		}
 		raceActive = true;
@@ -494,7 +601,7 @@ function paceIntervalMs() {
 
 	function startPacer() {
 		if (!currentFileName) {
-			Swal.fire('Info', 'Prvo učitaj PDF fajl.', 'info');
+			Swal.fire('Info', 'Prvo učitaj fajl.', 'info');
 			return;
 		}
 
@@ -676,17 +783,19 @@ function paceIntervalMs() {
 		const file = event.target.files[0];
 		if (!file) return;
 
-		const lower = file.name.toLowerCase();
-		if (!lower.endsWith('.pdf')) {
+		const ext = file.name.split('.').pop().toLowerCase();
+		if (ext === 'pdf') {
+			loadPdfFile(file);
+		} else if (ext === 'epub' || ext === 'txt') {
+			loadTextFile(file);
+		} else {
 			Swal.fire({
 				title: 'Nepodržan format',
-				text: 'Ova aplikacija trenutno podržava samo PDF fajlove.',
+				text: 'Podržani formati su PDF, EPUB i TXT.',
 				icon: 'warning'
 			});
 			event.target.value = '';
-			return;
 		}
-		loadPdfFile(file);
 	}
 
 	let wordCountLabel = $derived('Riječi na stranici: ' + words.length);
@@ -774,7 +883,7 @@ function paceIntervalMs() {
 				<div class="d-flex align-items-center flex-grow-1 gap-2" style="min-width: 250px;">
 					<input
 						type="file"
-						accept=".pdf,application/pdf"
+						accept=".pdf,.epub,.txt,application/pdf,application/epub+zip,text/plain"
 						class="form-control form-control-sm flex-grow-1"
 						onchange={onFileSelected}
 					/>
