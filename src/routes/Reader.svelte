@@ -7,10 +7,10 @@
 	//Podešavanje
 
 	let marginClipEnabled = $state(false);
-	let paceAutoNext = $state(false);
+	// let paceAutoNext = $state(true);
 	let paceAutoNextTimeoutId = null;
 	let pastedText = $state('');
-
+	let paceAutoNext = localStore('paceAutoNext', true);
 	//WPM
 	let paceWpm = localStore('paceWpm', 300);
 	// --- Generalni localStorage helperi (zamjena za Firebase) ---
@@ -38,14 +38,9 @@
 		}
 	}
 
-	function togglePaceAutoNext() {
-		paceAutoNext = !paceAutoNext;
-		saveSetting('pace_auto_next', paceAutoNext);
-	}
+
 
 	onMount(() => {
-		
-
 		// Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === 'hidden') {
@@ -532,10 +527,10 @@
 		return Math.max(1, Number(podesavanja.paceChunkSize) || 1);
 	}
 
-function paceIntervalMs() {
-	const wpm = Math.max(50, Number(paceWpm.value) || 300);
-	return (60000 / wpm) * paceChunk();
-}
+	function paceIntervalMs() {
+		const wpm = Math.max(50, Number(paceWpm.value) || 300);
+		return (60000 / wpm) * paceChunk();
+	}
 
 	function paceTotalChunks() {
 		return Math.ceil(words.length / paceChunk());
@@ -579,11 +574,11 @@ function paceIntervalMs() {
 				clearInterval(paceIntervalId);
 				paceIntervalId = null;
 			}
-			if (paceAutoNext && currentPage < totalPages) {
+			if (paceAutoNext.value && currentPage < totalPages) {
 				paceAutoNextTimeoutId = setTimeout(() => {
 					paceAutoNextTimeoutId = null;
 					if (paceActive && !isPaused && currentPage < totalPages) {
-					if (raceActive) raceLastTime += 5000;
+						if (raceActive) raceLastTime += 5000;
 						pdfNext();
 					}
 				}, 5000);
@@ -868,10 +863,10 @@ function paceIntervalMs() {
 
 	// Funkcija koja se okida na tap/klik po PDF kontejneru
 	function handlePdfTap() {
-	if (!paceActive && !raceActive) return;
-	if (isPaused) resumeSession();
-	else pauseSession();
-}
+		if (!paceActive && !raceActive) return;
+		if (isPaused) resumeSession();
+		else pauseSession();
+	}
 </script>
 
 <div class="container-fluid">
@@ -1166,8 +1161,9 @@ function paceIntervalMs() {
 								type="checkbox"
 								role="switch"
 								id="paceAutoNextToggle"
-								checked={paceAutoNext}
+								bind:checked={paceAutoNext.value}
 								onchange={togglePaceAutoNext}
+							
 							/>
 							<label class="form-check-label small" for="paceAutoNextToggle">Autonext</label>
 						</div>
