@@ -38,8 +38,6 @@
 		}
 	}
 
-
-
 	onMount(() => {
 		// Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
 		const handleVisibilityChange = () => {
@@ -1162,8 +1160,6 @@
 								role="switch"
 								id="paceAutoNextToggle"
 								bind:checked={paceAutoNext.value}
-								onchange={togglePaceAutoNext}
-							
 							/>
 							<label class="form-check-label small" for="paceAutoNextToggle">Autonext</label>
 						</div>
