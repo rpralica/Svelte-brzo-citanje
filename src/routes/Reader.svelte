@@ -1322,6 +1322,7 @@
 	}
 	.reader-content-wrap {
 		position: relative;
+		
 	}
 	.margin-line {
 		position: absolute;

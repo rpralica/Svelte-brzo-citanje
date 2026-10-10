@@ -1,6 +1,8 @@
 <script>
 /* global Swal */
     // --- Tri kratka teksta (~200 rijeci) za Brzi test ---
+
+
     const SHORT_TEXTS = [
 `Vlak je kasnio već dvadeset minuta kad je Amir konačno ugledao svjetla stanice. Sjedio je sam u posljednjem vagonu, gledajući kroz prozor u maglu koja se dizala iznad polja. Kondukter je prošao pored njega treći put te noći, provjeravajući karte putnika kojih je bilo sve manje.
 
@@ -137,6 +139,12 @@ Amela se nasmiješila, podižući svoju šoljicu kafe u malu zdravicu. "Za tride
 
 Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obasjavalo ulice koje je štitio toliko dugo. Bila je to dobra karijera, pomislio je. Dobar život, posvećen zaštiti drugih. I dok je posljednja smjena završavala, osjećao je mir znajući da ostavlja grad u sposobnim rukama mlade detektivke pored sebe.`
     ];
+
+let selectedWords = $state(0);
+function handleSelection() {
+    const selection = window.getSelection?.()?.toString() ?? '';
+    selectedWords = countWords(selection);
+}
 
     let testType = $state('brzi'); // 'brzi' | 'kompletni'
     let testText = $state('');
@@ -304,15 +312,25 @@ Vlado je kucnuo svoju šoljicu o njenu, gledajući preko grada dok je sunce obas
             <button class="btn btn-outline-danger btn-sm" type="button" onclick={clearAll} disabled={testActive}>Obrisi</button>
         </div>
 
+<!-- Brojač riječi -->
+<div class="d-flex gap-3 mb-2 ps-1 small fw-bold text-dark">
+    <span>Ukupno: {countWords(testText)} riječi</span>
+    {#if selectedWords > 0}
+        <span class="text-danger">Selektovano: {selectedWords} riječi</span>
+    {/if}
+</div>
+
         <!-- Textarea sa dinamičkim fontom i opcionalnim justify ravnanjem -->
-        <textarea
-            class="form-control mb-3 custom-textarea" 
-            rows="14"
-            style="font-size: {fontSize}px; text-align: {isJustified ? 'justify' : 'left'};"
-            placeholder="Generisi tekst, učitaj .txt fajl sa računara, ili nalijepi svoj tekst ovdje..."
-            bind:value={testText}
-            disabled={testActive}
-        ></textarea>
+    <textarea
+    class="form-control mb-3 custom-textarea" 
+    rows="14"
+    style="font-size: {fontSize}px; text-align: {isJustified ? 'justify' : 'left'};"
+    placeholder="Generisi tekst, učitaj .txt fajl sa računara, ili nalijepi svoj tekst ovdje..."
+    bind:value={testText}
+    disabled={testActive}
+    onmouseup={handleSelection}
+    onkeyup={handleSelection}
+></textarea>
 
         <div class="d-flex justify-content-center gap-2">
             {#if !testActive}
