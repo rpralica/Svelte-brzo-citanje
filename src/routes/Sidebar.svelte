@@ -328,7 +328,7 @@
     /* Rotiramo samo unutrašnji span/ikonicu, a ne cijelo dugme! */
     .qt-settings .gear-icon {
         display: inline-block;
-        font-size: 3rem;
+        font-size: 2rem;
         transition: transform 0.4s ease;
 		margin-left: 2rem;
     }
