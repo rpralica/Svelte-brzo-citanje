@@ -46,7 +46,7 @@
                     value={wpm}
                     readonly
                     type="number"
-                    class="form-control w-100 fw-bold mt-2 bg-light text-success"
+                    class="form-control w-100 fw-bold mt-2 "
                 />
             </div>
         </div>

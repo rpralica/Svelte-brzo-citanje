@@ -2,6 +2,8 @@
   import Rijeci from "./Rijeci.svelte";
   import Vrijeme from "./Vrijeme.svelte";
   import Wpm from "./Wpm.svelte";
+import {wpmShared}  from '$lib/functionsHelper/settings.svelte.js';
+
 
   let selWpm = $state('wpm');
   let wpm = $state(0);
@@ -36,7 +38,7 @@
 <Rijeci  bind:wpm bind:min bind:sec></Rijeci>
 
 {:else if selWpm==='wpm' }
-<Wpm bind:rijeci bind:min bind:sec></Wpm>
+<Wpm bind:rijeci={wpmShared.words}  bind:min bind:sec></Wpm>
 
 {:else if selWpm==='vrijeme'}
 <Vrijeme  bind:rijeci  bind:wpm bind:minute bind:sekunde ></Vrijeme>

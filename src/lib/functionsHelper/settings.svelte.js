@@ -1,6 +1,6 @@
 /* global Swal */
 import { browser } from '$app/environment';
-
+export const wpmShared = $state({ words: 0 });
 const pocetneVrijednosti = {
 	marginLeft: 10,
 	marginRight: 10,

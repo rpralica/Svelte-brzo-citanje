@@ -1298,19 +1298,7 @@
 		transform: rotate(90deg);
 	}
 
-	.qt-settings {
-		background: none;
-		border: none;
-		font-size: 2rem;
-		cursor: pointer;
-		display: inline-block;
-		transition: transform 0.4s ease;
-	}
-
-	/* Rotacija na hover */
-	.qt-settings:hover {
-		transform: rotate(90deg);
-	}
+	
 
 	nav {
 		background-color: #f8f8f8;
@@ -1322,7 +1310,6 @@
 	}
 	.reader-content-wrap {
 		position: relative;
-		
 	}
 	.margin-line {
 		position: absolute;

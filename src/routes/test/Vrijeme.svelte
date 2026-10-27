@@ -37,7 +37,7 @@
 				type="number"
 				min="0"
 				step="10"
-				class="form-control w-100 fw-bold mt-2 bg-light"
+				class="form-control w-100 fw-bold mt-2 "
 			/>
 
 			<hr class="w-100 bg-dark border border-1 border-dark" />

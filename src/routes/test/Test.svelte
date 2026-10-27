@@ -1,6 +1,16 @@
 <script>
 /* global Swal */
+
+
+import { wpmShared } from '$lib/functionsHelper/settings.svelte.js';
+
+$effect(() => {
+	wpmShared.words = countWords(testText);
+});
+
     // --- Tri kratka teksta (~200 rijeci) za Brzi test ---
+
+
 
 
     const SHORT_TEXTS = [
