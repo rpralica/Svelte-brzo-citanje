@@ -79,7 +79,7 @@
 						<button
 							class="btn btn-outline-danger"
 							type="button"
-							onclick={() => setMarginDebljina((podesavanja.marginDebljina += 1))}>+</button
+							onclick={() => setMarginDebljina((podesavanja.marginDebljina + 1))}>+</button
 						>
 					</div>
 				</div>
@@ -304,6 +304,63 @@
 </div>
 
 <style>
+
+/* Sidebar - puna, neprozirna pozadina */
+.offcanvas {
+	--bs-offcanvas-bg: #ffffff;
+	--bs-offcanvas-color: #212529;
+	background-color: #ffffff;
+	opacity: 1;
+	box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
+	border-right: 1px solid #ccc;
+}
+
+/* Padajuća lista fontova */
+.font-picker {
+	position: relative;
+}
+
+.picker-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	min-width: 9rem;
+	background-color: #fff;
+}
+
+.dropdown-lista {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	min-width: 100%;
+	margin-top: 4px;
+	background-color: #ffffff;
+	border: 1px solid #999;
+	border-radius: 6px;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+	z-index: 2000;
+	max-height: 260px;
+	overflow-y: auto;
+}
+
+.font-opcija {
+	padding: 0.5rem 0.75rem;
+	cursor: pointer;
+	background-color: #ffffff;
+	color: #212529;
+}
+
+.font-opcija:hover {
+	background-color: #e9ecef;
+}
+
+.font-opcija.aktivan {
+	background-color: #cfe2ff;
+	font-weight: bold;
+}
+
+
 	/* Fiksiramo kontejner na dno ekrana (ili možeš prilagoditi poziciju ako imaš sidebar) */
 
 	.settings-container-bottom {
