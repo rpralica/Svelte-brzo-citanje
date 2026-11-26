@@ -105,6 +105,7 @@
 	let pdfDoc = null;
 	let currentPage = $state(1);
 	let totalPages = $state(1);
+	let progressPercent = $derived(totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0);
 
 	// --- Ukupan broj rijeci u cijelom dokumentu ---
 	let totalWordsInDoc = $state(0);
@@ -630,8 +631,9 @@
 		paceActive = false;
 		paceIndex = 0;
 
-		// Kada gašenje pacera ugasi i race (ili ostaje race? Možeš ostaviti da se i race zaustavi ili ostane aktivan – po želji, ali obično ide stop oboje)
+		// Gašenje pacera gasi i race
 		raceActive = false;
+		isPaused = false;
 	}
 
 	// --- Pauza/Nastavi ---
@@ -730,9 +732,10 @@
 		}
 	}
 
-	// --- Pretraga ---
+	// --- Pretraga (live) ---
 	let searchQuery = $state('');
 	let searchResults = $state([]);
+	let searchTimeoutId;
 
 	function runSearch() {
 		const qWords = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -765,9 +768,30 @@
 		searchResults = results;
 	}
 
+	// Live search: pretražuje dok kucaš (mala pauza da ne radi na svako slovo)
+	$effect(() => {
+		const q = searchQuery;
+		const ready = searchReady;
+
+		if (!ready || q.trim().length < 2) {
+			searchResults = [];
+			return;
+		}
+
+		searchTimeoutId = setTimeout(runSearch, 250);
+		return () => clearTimeout(searchTimeoutId);
+	});
+
 	async function goToResult(r) {
-		await renderPdfPage(r.page);
-		posIndex = r.wordIndex;
+		const { page, wordIndex } = r;
+
+		// zatvori search: očisti upit i rezultate, pa idi na mjesto u knjizi
+		searchQuery = '';
+		searchResults = [];
+
+		await renderPdfPage(page);
+		posIndex = wordIndex;
+		scrollToReaderTop();
 	}
 
 	let infoMessage = $state('');
@@ -867,7 +891,18 @@
 	}
 </script>
 
-<div class="container-fluid">
+<!-- Oznaka pauze (fixed, ne smeta tapu na čitač) -->
+{#if isPaused}
+	<div class="paused-badge">⏸ PAUZIRANO</div>
+{/if}
+{#if currentFileName}
+    <div class="progress-bottom">
+        <div class="progress-fill" style="width: {progressPercent}%"></div>
+        <span class="progress-label">str. {currentPage} / {totalPages} · {progressPercent}%</span>
+    </div>
+{/if}
+
+<div class="container-fluid" style="padding-bottom: 40px;">
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100 shadow-lg">
 		<div class="card-body py-2">
@@ -985,18 +1020,13 @@
 					<span class="info">Stranica: {currentPage} / {totalPages}</span>
 				</div>
 
-				<div class="input-group input-group-sm">
-					<input
-						type="text"
-						class="form-control"
-						placeholder="Pretraži cijeli dokument..."
-						bind:value={searchQuery}
-						onkeydown={(e) => e.key === 'Enter' && runSearch()}
-					/>
-					<button class="btn btn-primary" type="button" onclick={runSearch} disabled={!searchReady}
-						>Pretraga</button
-					>
-				</div>
+				<input
+					type="search"
+					class="form-control form-control-sm"
+					placeholder="Pretraži cijeli dokument..."
+					bind:value={searchQuery}
+					disabled={!searchReady}
+				/>
 				{#if !searchReady && !preparingSearch}
 					<div class="info mt-1">Pretraga još nije spremna.</div>
 				{/if}
@@ -1010,7 +1040,7 @@
 							</div>
 						{/each}
 					</div>
-				{:else if searchQuery.trim().length > 0}
+				{:else if searchQuery.trim().length >= 2}
 					<div class="info mt-2">Nema rezultata.</div>
 				{/if}
 			</div>
@@ -1298,8 +1328,6 @@
 		transform: rotate(90deg);
 	}
 
-	
-
 	nav {
 		background-color: #f8f8f8;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -1365,4 +1393,48 @@
 	.search-result-item:hover {
 		background: #f0f0f0;
 	}
+
+	/* Oznaka pauze */
+	.paused-badge {
+		position: fixed;
+		top: 12px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 3000;
+		padding: 6px 18px;
+		background: #dc3545;
+		color: #fff;
+		font-weight: bold;
+		border-radius: 20px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+		pointer-events: none; /* tap/klik prolazi kroz nju do čitača */
+	}
+	.progress-bottom {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 20px;
+	background: #dee2e6;
+	z-index: 2500;
+	pointer-events: none; /* ne smeta tapu na čitač */
+}
+
+.progress-fill {
+	height: 100%;
+	background: deepskyblue;
+	transition: width 0.3s ease;
+}
+
+.progress-label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #fff;
+	text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
 </style>
