@@ -48,14 +48,30 @@
 
 		// Esc = pauza/nastavi (toggle) za Race i Pacer
 		function handleGlobalKeydown(e) {
-			if (e.key === 'Escape') {
-				if (isPaused) {
-					resumeSession();
-				} else if (paceActive || raceActive) {
-					pauseSession();
-				}
-			}
+	if (e.key === 'Escape') {
+		if (isPaused) {
+			resumeSession();
+		} else if (paceActive || raceActive) {
+			pauseSession();
 		}
+		return;
+	}
+
+	if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+		// ne diraj strelice dok kucaš u polju (pretraga, idi na str., WPM, textarea...)
+		const tag = e.target.tagName;
+		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) {
+			return;
+		}
+		// ne radi dok je otvoren SweetAlert prozor
+		if (document.querySelector('.swal2-container')) return;
+		if (!currentFileName) return;
+
+		e.preventDefault();
+		if (e.key === 'ArrowRight') pdfNext();
+		else pdfPrev();
+	}
+}
 
 		window.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', savePositionQuietly);
@@ -1415,7 +1431,7 @@
 	right: 0;
 	bottom: 0;
 	height: 20px;
-	background: #dee2e6;
+	background: #495057;
 	z-index: 2500;
 	pointer-events: none; /* ne smeta tapu na čitač */
 }
