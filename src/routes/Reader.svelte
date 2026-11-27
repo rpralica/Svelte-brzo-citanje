@@ -5,7 +5,7 @@
 	import { podesavanja, setPaceChunkSize } from '$lib/functionsHelper/settings.svelte.js';
 	import { localStore } from '$lib/functionsHelper/myFunctions.svelte';
 	//Podešavanje
-
+ 
 	let marginClipEnabled = $state(false);
 	// let paceAutoNext = $state(true);
 	let paceAutoNextTimeoutId = null;
@@ -22,12 +22,12 @@
 			console.error('Greška pri čuvanju u localStorage:', e);
 		}
 	}
-
+ 
 	function toggleBold() {
 		podesavanja.bold = !podesavanja.bold;
 		// sacuvaj(); // Ako automatski snimaš u store-u
 	}
-
+ 
 	function loadSetting(key) {
 		if (typeof localStorage === 'undefined') return undefined;
 		try {
@@ -37,7 +37,7 @@
 			return undefined;
 		}
 	}
-
+ 
 	onMount(() => {
 		// Slušalica za automatsko čuvanje pozicije pri izlasku iz taba / pretraživača
 		const handleVisibilityChange = () => {
@@ -45,47 +45,52 @@
 				savePositionQuietly();
 			}
 		};
-
-		// Esc = pauza/nastavi (toggle) za Race i Pacer
+ 
+		// Esc = pauza/nastavi, strelice lijevo/desno = prethodna/sljedeća stranica
 		function handleGlobalKeydown(e) {
-	if (e.key === 'Escape') {
-		if (isPaused) {
-			resumeSession();
-		} else if (paceActive || raceActive) {
-			pauseSession();
+			if (e.key === 'Escape') {
+				if (isPaused) {
+					resumeSession();
+				} else if (paceActive || raceActive) {
+					pauseSession();
+				}
+				return;
+			}
+ 
+			if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+				// ne diraj strelice dok kucaš u polju (pretraga, idi na str., WPM, textarea...)
+				const tag = e.target.tagName;
+				if (
+					tag === 'INPUT' ||
+					tag === 'TEXTAREA' ||
+					tag === 'SELECT' ||
+					e.target.isContentEditable
+				) {
+					return;
+				}
+				// ne radi dok je otvoren SweetAlert prozor
+				if (document.querySelector('.swal2-container')) return;
+				if (!currentFileName) return;
+ 
+				e.preventDefault();
+				if (e.key === 'ArrowRight') pdfNext();
+				else pdfPrev();
+			}
 		}
-		return;
-	}
-
-	if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-		// ne diraj strelice dok kucaš u polju (pretraga, idi na str., WPM, textarea...)
-		const tag = e.target.tagName;
-		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) {
-			return;
-		}
-		// ne radi dok je otvoren SweetAlert prozor
-		if (document.querySelector('.swal2-container')) return;
-		if (!currentFileName) return;
-
-		e.preventDefault();
-		if (e.key === 'ArrowRight') pdfNext();
-		else pdfPrev();
-	}
-}
-
+ 
 		window.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', savePositionQuietly);
 		window.addEventListener('keydown', handleGlobalKeydown);
-
+ 
 		return () => {
 			window.removeEventListener('visibilitychange', handleVisibilityChange);
 			window.removeEventListener('beforeunload', savePositionQuietly);
 			window.removeEventListener('keydown', handleGlobalKeydown);
 		};
 	});
-
+ 
 	// --- Font / zoom ---
-
+ 
 	let raceAverageWpm = $derived.by(() => {
 		if (raceStats.length === 0) return 0;
 		const totalWords = raceStats.reduce((s, x) => s + x.words, 0);
@@ -93,52 +98,52 @@
 		const totalMinutes = totalSeconds / 60;
 		return totalMinutes > 0 ? Math.floor(totalWords / totalMinutes) : 0;
 	});
-
+ 
 	// --- Vodilice (margine) ---
 	let marginLinesEnabled = $state(false);
-
+ 
 	function toggleMarginClip() {
 		marginClipEnabled = !marginClipEnabled;
 		saveSetting('margin_clip_enabled', marginClipEnabled);
 	}
-
+ 
 	function toggleMarginLines() {
 		marginLinesEnabled = !marginLinesEnabled;
 		saveSetting('margin_lines_enabled', marginLinesEnabled);
 	}
-
+ 
 	// --- Tekst / rijeci (trenutna stranica) ---
 	let words = $state([]);
-
+ 
 	function splitToWords(text) {
 		const trimmed = text.trim();
 		if (trimmed.length === 0) return [];
 		return trimmed.split(/\s+/);
 	}
-
+ 
 	// --- Fajl info ---
 	let currentFileName = $state('');
 	let pdfDoc = null;
 	let currentPage = $state(1);
 	let totalPages = $state(1);
 	let progressPercent = $derived(totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0);
-
+ 
 	// --- Ukupan broj rijeci u cijelom dokumentu ---
 	let totalWordsInDoc = $state(0);
-
+ 
 	// --- Markeri i pozicija ---
 	let posIndex = $state(null);
 	let startIndex = $state(null);
 	let endIndex = $state(null);
-
+ 
 	let markerWordCount = $derived(
 		startIndex !== null && endIndex !== null ? Math.abs(endIndex - startIndex) + 1 : 0
 	);
-
+ 
 	function wordClick(idx) {
 		posIndex = idx;
 	}
-
+ 
 	function setMarkerStart() {
 		if (posIndex === null) {
 			Swal.fire('Info', 'Prvo klikni na rijec da postavis pocetnu tacku.', 'info');
@@ -146,7 +151,7 @@
 		}
 		startIndex = posIndex;
 	}
-
+ 
 	function setMarkerEnd() {
 		if (posIndex === null) {
 			Swal.fire('Info', 'Prvo klikni na rijec da postavis krajnju tacku.', 'info');
@@ -158,23 +163,23 @@
 		}
 		endIndex = posIndex;
 	}
-
+ 
 	function clearMarkers() {
 		startIndex = null;
 		endIndex = null;
 	}
-
+ 
 	// --- Pozicija po fajlu (localStorage, jedan JSON objekat) ---
 	function sanitizeKey(name) {
 		return name.replace(/[.#$[\]]/g, '_');
 	}
-
+ 
 	function getSavedPositions() {
 		return loadSetting('pdf_stranice') || {};
 	}
-
+ 
 	let previousPositionLabel = $state('');
-
+ 
 	// Tiho čuvanje pozicije u pozadini (za auto-save pri izlasku)
 	function savePositionQuietly() {
 		if (!currentFileName) return;
@@ -183,22 +188,22 @@
 		positions[safeKey] = currentPage;
 		saveSetting('pdf_stranice', positions);
 	}
-
+ 
 	async function savePosition() {
 		if (!currentFileName) {
 			Swal.fire('Greška', 'Prvo učitaj fajl.', 'warning');
 			return;
 		}
-
+ 
 		const safeKey = sanitizeKey(currentFileName);
 		const positions = getSavedPositions();
 		const existing = positions[safeKey] !== undefined ? positions[safeKey] : null;
-
+ 
 		const existingText =
 			existing === null
 				? 'Nema prethodno sačuvane pozicije.'
 				: 'Prethodno sačuvana stranica: ' + existing;
-
+ 
 		const result = await Swal.fire({
 			title: 'Sačuvati poziciju?',
 			text: existingText + ' Da li sigurno želiš sačuvati novu poziciju?',
@@ -207,15 +212,15 @@
 			confirmButtonText: 'Da, sačuvaj',
 			cancelButtonText: 'Otkaži'
 		});
-
+ 
 		if (result.isConfirmed) {
 			if (existing !== null) {
 				previousPositionLabel = 'Prethodna pozicija: stranica ' + existing;
 			}
-
+ 
 			positions[safeKey] = currentPage;
 			saveSetting('pdf_stranice', positions);
-
+ 
 			Swal.fire({
 				title: 'Sačuvano!',
 				icon: 'success',
@@ -224,25 +229,25 @@
 			});
 		}
 	}
-
+ 
 	async function goToSavedPosition() {
 		if (!currentFileName) {
 			Swal.fire('Greška', 'Prvo učitaj fajl.', 'warning');
 			return;
 		}
-
+ 
 		const safeKey = sanitizeKey(currentFileName);
 		const positions = getSavedPositions();
-
+ 
 		if (positions[safeKey] === undefined) {
 			Swal.fire('Info', 'Nema sačuvane pozicije za ovaj fajl.', 'info');
 			return;
 		}
-
+ 
 		await renderPdfPage(parseInt(positions[safeKey], 10));
 		infoMessage = '';
 	}
-
+ 
 	// --- Reset stanja pri učitavanju novog fajla (zajedničko za PDF, EPUB i TXT) ---
 	function resetDocumentState() {
 		currentPage = 1;
@@ -257,14 +262,16 @@
 		raceActive = false;
 		raceStats = [];
 		raceCheckpoints = [];
+		toc = [];
+		tocOpen = false;
 		stopPacer();
 		isPaused = false;
 	}
-
+ 
 	// --- Učitavanje .pdf ---
 	// --- Učitavanje .pdf sa robusnom greškom ---
 	let pdfjsLib = null;
-
+ 
 	async function ensurePdfJs() {
 		if (pdfjsLib) return pdfjsLib;
 		pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
@@ -274,11 +281,11 @@
 		).toString();
 		return pdfjsLib;
 	}
-
+ 
 	let pagesWordsCache = [];
 	let searchReady = $state(false);
 	let preparingSearch = $state(false);
-
+ 
 	async function loadPdfFile(file) {
 		try {
 			const lib = await ensurePdfJs();
@@ -287,16 +294,18 @@
 			totalPages = pdfDoc.numPages;
 			currentFileName = file.name;
 			resetDocumentState();
-
+ 
 			let targetPage = 1;
 			const safeKey = sanitizeKey(currentFileName);
 			const positions = getSavedPositions();
 			if (positions[safeKey] !== undefined) {
 				targetPage = parseInt(positions[safeKey], 10);
 			}
-
+ 
 			await renderPdfPage(targetPage);
-
+ 
+			loadPdfToc(); // sadržaj (bookmarki) u pozadini, bez await
+ 
 			preparingSearch = true;
 			extractAllPages()
 				.then(() => {
@@ -318,11 +327,11 @@
 			closePdf();
 		}
 	}
-
+ 
 	// --- Učitavanje .epub i .txt ---
 	// Oba formata se sijeku na stranice od po 300 riječi. PDF ostaje onako kako idu njegove stranice.
 	const WORDS_PER_PAGE = 300;
-
+ 
 	// Tekst -> niz stranica, gdje je svaka stranica niz riječi
 	function splitIntoPages(text) {
 		const allWords = splitToWords(text);
@@ -332,83 +341,166 @@
 		}
 		return pages;
 	}
-
+ 
 	async function loadTxt(file) {
 		return splitIntoPages(await file.text());
 	}
-
+ 
 	// EPUB je ZIP sa XHTML fajlovima. Svako poglavlje se siječe posebno,
 	// pa stranica nikad ne prelazi granicu poglavlja.
+	// Vraća { pages, toc }.
 	async function loadEpub(file) {
 		const zip = await JSZip.loadAsync(file);
 		const parser = new DOMParser();
-
+ 
 		async function readDoc(path, type) {
 			const entry = zip.file(path);
 			if (!entry) return null;
 			return parser.parseFromString(await entry.async('string'), type);
 		}
-
+ 
+		const dirOf = (p) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/') + 1) : '');
+		// riješi relativne putanje, %20 itd. (fragment #... otpada sam)
+		const resolvePath = (href, baseDir) =>
+			decodeURIComponent(new URL(href, 'http://x/' + baseDir).pathname.slice(1));
+ 
 		// 1. container.xml kaže gdje je .opf fajl
 		const container = await readDoc('META-INF/container.xml', 'application/xml');
 		const opfPath = container.querySelector('rootfile').getAttribute('full-path');
-		const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
-
-		// 2. .opf: manifest (id -> href) i spine (redoslijed poglavlja)
+		const opfDir = dirOf(opfPath);
+ 
+		// 2. .opf: manifest (id -> href), spine (redoslijed), te lokacija sadržaja
 		const opf = await readDoc(opfPath, 'application/xml');
 		const manifest = {};
+		let navHref = null;
 		opf.querySelectorAll('manifest > item').forEach((item) => {
 			manifest[item.getAttribute('id')] = item.getAttribute('href');
+			const props = (item.getAttribute('properties') || '').split(/\s+/);
+			if (props.includes('nav')) navHref = item.getAttribute('href');
 		});
+		const ncxId = opf.querySelector('spine')?.getAttribute('toc');
+		const ncxHref = ncxId ? manifest[ncxId] : null;
+ 
 		const hrefs = [...opf.querySelectorAll('spine > itemref')]
 			.map((ref) => manifest[ref.getAttribute('idref')])
 			.filter(Boolean);
-
-		// 3. za svako poglavlje izvuci tekst i isijeci ga na stranice
+ 
+		// 3. za svako poglavlje izvuci tekst, isijeci ga na stranice i zapamti gdje počinje
 		const pages = [];
+		const chapterStart = {}; // putanja fajla -> indeks prve stranice
+		const fallbackToc = [];
+ 
 		for (const href of hrefs) {
-			// riješi relativne putanje i %20 itd.
-			const path = decodeURIComponent(new URL(href, 'http://x/' + opfDir).pathname.slice(1));
+			const path = resolvePath(href, opfDir);
 			const doc = await readDoc(path, 'text/html');
 			if (!doc || !doc.body) continue;
-
+ 
 			doc.querySelectorAll('script, style').forEach((el) => el.remove());
 			// razmak poslije blok elemenata, da se riječi iz različitih paragrafa ne slijepe
 			doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr').forEach((el) => {
 				el.insertAdjacentText('afterend', ' ');
 			});
-
-			pages.push(...splitIntoPages(doc.body.textContent));
+ 
+			const chapterPages = splitIntoPages(doc.body.textContent);
+			if (chapterPages.length === 0) continue;
+ 
+			const startPage = pages.length;
+			chapterStart[path] = startPage;
+			const heading = doc.querySelector('h1, h2, h3')?.textContent.replace(/\s+/g, ' ').trim();
+			fallbackToc.push({
+				title: heading || 'Dio ' + (fallbackToc.length + 1),
+				page: startPage + 1,
+				level: 0
+			});
+			pages.push(...chapterPages);
 		}
-		return pages;
+ 
+		// 4. sadržaj: EPUB3 nav, pa stari NCX, pa naslovi poglavlja kao rezerva
+		let tocEntries = [];
+		try {
+			if (navHref) {
+				const navPath = resolvePath(navHref, opfDir);
+				const navDoc = await readDoc(navPath, 'text/html');
+				const navDir = dirOf(navPath);
+				const navs = [...navDoc.querySelectorAll('nav')];
+				const navEl = navs.find((n) => n.getAttribute('epub:type') === 'toc') || navs[0];
+ 
+				navEl?.querySelectorAll('a[href]').forEach((a) => {
+					const target = resolvePath(a.getAttribute('href'), navDir);
+					if (chapterStart[target] === undefined) return;
+					let level = 0;
+					for (let el = a.parentElement; el && el !== navEl; el = el.parentElement) {
+						if (el.tagName === 'OL' || el.tagName === 'UL') level++;
+					}
+					tocEntries.push({
+						title: a.textContent.replace(/\s+/g, ' ').trim(),
+						page: chapterStart[target] + 1,
+						level: Math.max(0, level - 1)
+					});
+				});
+			} else if (ncxHref) {
+				const ncxPath = resolvePath(ncxHref, opfDir);
+				const ncx = await readDoc(ncxPath, 'application/xml');
+				const ncxDir = dirOf(ncxPath);
+ 
+				ncx.querySelectorAll('navPoint').forEach((np) => {
+					const label = np.querySelector('navLabel > text')?.textContent;
+					const src = np.querySelector('content')?.getAttribute('src');
+					if (!label || !src) return;
+					const target = resolvePath(src, ncxDir);
+					if (chapterStart[target] === undefined) return;
+					let level = 0;
+					for (let p = np.parentElement; p && p.tagName === 'navPoint'; p = p.parentElement) {
+						level++;
+					}
+					tocEntries.push({
+						title: label.replace(/\s+/g, ' ').trim(),
+						page: chapterStart[target] + 1,
+						level
+					});
+				});
+			}
+		} catch (e) {
+			console.error('Greška pri čitanju sadržaja EPUB-a:', e);
+		}
+ 
+		if (tocEntries.length === 0) tocEntries = fallbackToc;
+		return { pages, toc: tocEntries };
 	}
-
+ 
 	async function loadTextFile(file) {
 		try {
 			const ext = file.name.split('.').pop().toLowerCase();
-			const pages = ext === 'epub' ? await loadEpub(file) : await loadTxt(file);
-
+			let pages;
+			let tocEntries = [];
+			if (ext === 'epub') {
+				({ pages, toc: tocEntries } = await loadEpub(file));
+			} else {
+				pages = await loadTxt(file);
+			}
+ 
 			if (pages.length === 0) {
 				Swal.fire('Greška', 'U fajlu nije pronađen nikakav tekst.', 'error');
 				return;
 			}
-
+ 
 			pdfDoc = null; // nema PDF dokumenta, sve stranice su već spremne u kešu
 			totalPages = pages.length;
 			currentFileName = file.name;
 			resetDocumentState();
-
+ 
 			pagesWordsCache = pages;
+			toc = tocEntries; // poslije resetDocumentState(), koji ga briše
 			searchReady = true; // pretraga radi odmah, nema pozadinske ekstrakcije
 			totalWordsInDoc = pages.reduce((sum, p) => sum + p.length, 0);
-
+ 
 			let targetPage = 1;
 			const safeKey = sanitizeKey(currentFileName);
 			const positions = getSavedPositions();
 			if (positions[safeKey] !== undefined) {
 				targetPage = parseInt(positions[safeKey], 10);
 			}
-
+ 
 			await renderPdfPage(targetPage);
 		} catch (e) {
 			console.error('Greška pri učitavanju fajla:', e);
@@ -419,7 +511,7 @@
 			);
 		}
 	}
-
+ 
 	async function extractAllPages() {
 		try {
 			for (let p = 1; p <= totalPages; p++) {
@@ -434,14 +526,14 @@
 			console.error('Greška pri ekstrakciji stranica u pozadini:', e);
 		}
 	}
-
+ 
 	async function renderPdfPage(pageNum) {
 		try {
 			if (!currentFileName) return;
 			if (pageNum < 1) pageNum = 1;
 			if (pageNum > totalPages) pageNum = totalPages;
 			currentPage = pageNum;
-
+ 
 			if (pagesWordsCache[pageNum - 1]) {
 				words = pagesWordsCache[pageNum - 1];
 			} else {
@@ -455,7 +547,7 @@
 			posIndex = null;
 			startIndex = null;
 			endIndex = null;
-
+ 
 			// Auto-save pozicije pri svakom okretanju stranice
 			savePositionQuietly();
 		} catch (e) {
@@ -467,7 +559,7 @@
 	let raceActive = $state(false);
 	let raceStats = $state([]);
 	let raceLastTime = 0;
-
+ 
 	function startRace() {
 		if (!currentFileName) {
 			Swal.fire('Info', 'Prvo učitaj fajl.', 'info');
@@ -478,11 +570,11 @@
 		raceCheckpoints = [];
 		raceLastTime = Date.now();
 		isPaused = false;
-
+ 
 		// Automatski skroluj na vrh teksta da ne moraš ručno da tražiš početak
 		document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
 	}
-
+ 
 	function stopRace() {
 		if (raceActive && totalPages === 1 && raceStats.length === 0) {
 			recordPageIfRacing();
@@ -494,20 +586,20 @@
 			return;
 		}
 	}
-
+ 
 	let raceCheckpoints = $state([]);
 	const CHECKPOINT_THRESHOLDS = [
 		{ atMinutes: 1, seconds: 60 },
 		{ atMinutes: 5, seconds: 300 },
 		{ atMinutes: 10, seconds: 600 }
 	];
-
+ 
 	let raceCheckpointAverage = $derived.by(() => {
 		if (raceCheckpoints.length === 0) return 0;
 		const sum = raceCheckpoints.reduce((s, c) => s + c.wpm, 0);
 		return Math.round(sum / raceCheckpoints.length);
 	});
-
+ 
 	function recordPageIfRacing() {
 		if (!raceActive) return;
 		const now = Date.now();
@@ -517,7 +609,7 @@
 		const wpm = minutes > 0 ? Math.round(wordsOnPage / minutes) : 0;
 		raceStats = [...raceStats, { page: currentPage, words: wordsOnPage, seconds, wpm }];
 		raceLastTime = now;
-
+ 
 		const cumWords = raceStats.reduce((s, x) => s + x.words, 0);
 		const cumSeconds = raceStats.reduce((s, x) => s + x.seconds, 0);
 		for (const t of CHECKPOINT_THRESHOLDS) {
@@ -531,39 +623,39 @@
 			}
 		}
 	}
-
+ 
 	// --- Pacer ---
-
+ 
 	let paceActive = $state(false);
 	let paceIndex = $state(0);
 	let paceIntervalId = null;
-
+ 
 	function paceChunk() {
 		return Math.max(1, Number(podesavanja.paceChunkSize) || 1);
 	}
-
+ 
 	function paceIntervalMs() {
 		const wpm = Math.max(50, Number(paceWpm.value) || 300);
 		return (60000 / wpm) * paceChunk();
 	}
-
+ 
 	function paceTotalChunks() {
 		return Math.ceil(words.length / paceChunk());
 	}
-
+ 
 	function paceChunkRange(idx) {
 		const chunk = paceChunk();
 		const start = idx * chunk;
 		const end = Math.min(words.length, start + chunk);
 		return [start, end];
 	}
-
+ 
 	function isInPaceChunk(i) {
 		if (!paceActive) return false;
 		const [s, e] = paceChunkRange(paceIndex);
 		return i >= s && i < e;
 	}
-
+ 
 	function scrollPaceIntoViewIfNeeded() {
 		if (typeof document === 'undefined') return;
 		const el = document.querySelector('.pace-mark');
@@ -574,14 +666,14 @@
 			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		}
 	}
-
+ 
 	$effect(() => {
 		paceIndex;
 		if (paceActive) {
 			scrollPaceIntoViewIfNeeded();
 		}
 	});
-
+ 
 	function paceTick() {
 		paceIndex = paceIndex + 1;
 		if (paceIndex >= paceTotalChunks()) {
@@ -600,7 +692,7 @@
 			}
 		}
 	}
-
+ 
 	function startPaceIntervalInternal() {
 		if (paceIntervalId !== null) {
 			clearInterval(paceIntervalId);
@@ -608,33 +700,33 @@
 		}
 		paceIntervalId = setInterval(paceTick, paceIntervalMs());
 	}
-
+ 
 	function startPacer() {
 		if (!currentFileName) {
 			Swal.fire('Info', 'Prvo učitaj fajl.', 'info');
 			return;
 		}
-
+ 
 		// Čuvanje WPM-a (ako koristiš ovu funkciju negdje)
 		if (typeof saveSetting === 'function') {
 			saveSetting('pace_wpm', paceWpm.value);
 		}
-
+ 
 		// Pacer PALI I RACE u isto vrijeme, po našem dogovoru!
 		paceActive = true;
 		raceActive = true;
 		raceStats = [];
 		raceCheckpoints = [];
 		raceLastTime = Date.now();
-
+ 
 		paceIndex = 0;
 		isPaused = false;
 		startPaceIntervalInternal();
-
+ 
 		// Automatski skroluj na vrh teksta i za pacer
 		document.getElementById('reader-content-wrap')?.scrollIntoView({ behavior: 'smooth' });
 	}
-
+ 
 	function stopPacer() {
 		if (paceIntervalId !== null) {
 			clearInterval(paceIntervalId);
@@ -646,16 +738,16 @@
 		}
 		paceActive = false;
 		paceIndex = 0;
-
+ 
 		// Gašenje pacera gasi i race
 		raceActive = false;
 		isPaused = false;
 	}
-
+ 
 	// --- Pauza/Nastavi ---
 	let isPaused = $state(false);
 	let racePausedAt = 0;
-
+ 
 	function pauseSession() {
 		if (isPaused) return;
 		if (!raceActive && !paceActive) return;
@@ -672,7 +764,7 @@
 			paceAutoNextTimeoutId = null;
 		}
 	}
-
+ 
 	function resumeSession() {
 		if (!isPaused) return;
 		isPaused = false;
@@ -684,7 +776,7 @@
 			startPaceIntervalInternal();
 		}
 	}
-
+ 
 	function pdfNext() {
 		if (currentPage < totalPages) {
 			if (isPaused) {
@@ -701,7 +793,7 @@
 			});
 		}
 	}
-
+ 
 	function pdfPrev() {
 		if (currentPage > 1) {
 			if (raceActive) raceLastTime = Date.now();
@@ -714,9 +806,9 @@
 			});
 		}
 	}
-
+ 
 	let goToPageInput = $state(1);
-
+ 
 	function goToPage() {
 		let target = parseInt(goToPageInput, 10);
 		if (isNaN(target)) {
@@ -725,13 +817,13 @@
 		}
 		if (target < 1) target = 1;
 		if (target > totalPages) target = totalPages;
-
+ 
 		if (isPaused) {
 			Swal.fire('Info', 'Klikni "Nastavi" prije skoka na drugu stranicu.', 'info');
 			return;
 		}
 		if (raceActive) raceLastTime = Date.now();
-
+ 
 		renderPdfPage(target).then(() => {
 			scrollToReaderTop();
 			if (paceActive) {
@@ -740,19 +832,19 @@
 			}
 		});
 	}
-
+ 
 	let readerContentEl;
 	function scrollToReaderTop() {
 		if (readerContentEl) {
 			readerContentEl.scrollIntoView({ behavior: 'instant', block: 'start' });
 		}
 	}
-
+ 
 	// --- Pretraga (live) ---
 	let searchQuery = $state('');
 	let searchResults = $state([]);
 	let searchTimeoutId;
-
+ 
 	function runSearch() {
 		const qWords = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
 		if (qWords.length === 0) {
@@ -783,39 +875,91 @@
 		}
 		searchResults = results;
 	}
-
+ 
 	// Live search: pretražuje dok kucaš (mala pauza da ne radi na svako slovo)
 	$effect(() => {
 		const q = searchQuery;
 		const ready = searchReady;
-
+ 
 		if (!ready || q.trim().length < 2) {
 			searchResults = [];
 			return;
 		}
-
+ 
 		searchTimeoutId = setTimeout(runSearch, 250);
 		return () => clearTimeout(searchTimeoutId);
 	});
-
+ 
 	async function goToResult(r) {
 		const { page, wordIndex } = r;
-
+ 
 		// zatvori search: očisti upit i rezultate, pa idi na mjesto u knjizi
 		searchQuery = '';
 		searchResults = [];
-
+ 
 		await renderPdfPage(page);
 		posIndex = wordIndex;
 		scrollToReaderTop();
 	}
-
+ 
+	// --- Sadržaj (TOC) ---
+	let toc = $state([]); // [{ title, page, level }]
+	let tocOpen = $state(false);
+ 
+	// indeks poglavlja u kojem se trenutno nalaziš (za isticanje u listi)
+	let currentTocIndex = $derived.by(() => {
+		let idx = -1;
+		for (let i = 0; i < toc.length; i++) {
+			if (toc[i].page <= currentPage) idx = i;
+		}
+		return idx;
+	});
+ 
+	function goToToc(t) {
+		tocOpen = false;
+		goToPageInput = t.page;
+		goToPage(); // već rješava pauzu, Race, Pacer i skrol
+	}
+ 
+	// PDF: bookmarki iz dokumenta (ako ih ima)
+	async function loadPdfToc() {
+		const doc = pdfDoc;
+		if (!doc) return;
+		try {
+			const outline = await doc.getOutline();
+			if (!outline) return;
+			const result = [];
+ 
+			async function walk(items, level) {
+				for (const it of items) {
+					try {
+						let dest = it.dest;
+						if (typeof dest === 'string') dest = await doc.getDestination(dest);
+						if (Array.isArray(dest)) {
+							const idx =
+								typeof dest[0] === 'number' ? dest[0] : await doc.getPageIndex(dest[0]);
+							result.push({ title: it.title.trim(), page: idx + 1, level });
+						}
+					} catch (e) {
+						// preskoči stavku sa neispravnim odredištem
+					}
+					if (it.items && it.items.length) await walk(it.items, level + 1);
+				}
+			}
+ 
+			await walk(outline, 0);
+			if (pdfDoc === doc) toc = result; // ako je u međuvremenu učitan drugi fajl, ne diraj
+		} catch (e) {
+			console.error('Greška pri čitanju sadržaja PDF-a:', e);
+		}
+	}
+ 
 	let infoMessage = $state('');
-
+ 
 	function onFileSelected(event) {
 		const file = event.target.files[0];
 		if (!file) return;
-
+ 
 		const ext = file.name.split('.').pop().toLowerCase();
 		if (ext === 'pdf') {
 			loadPdfFile(file);
@@ -830,15 +974,15 @@
 			event.target.value = '';
 		}
 	}
-
+ 
 	let wordCountLabel = $derived('Riječi na stranici: ' + words.length);
-
+ 
 	let pastedWordCount = $derived(splitToWords(pastedText).length);
 	let selectedWordCount = $state(0);
-
+ 
 	let taRaceActive = $state(false);
 	let taStartTime = 0;
-
+ 
 	function startTaRace() {
 		if (!pastedText.trim()) {
 			Swal.fire('Info', 'Nema teksta za mjerenje.', 'info');
@@ -847,7 +991,7 @@
 		taRaceActive = true;
 		taStartTime = Date.now();
 	}
-
+ 
 	function stopTaRace() {
 		if (!taRaceActive) return;
 		const seconds = (Date.now() - taStartTime) / 1000;
@@ -867,7 +1011,7 @@
 			icon: 'success'
 		});
 	}
-
+ 
 	function closePdf() {
 		savePositionQuietly();
 		currentFileName = '';
@@ -882,11 +1026,13 @@
 		totalWordsInDoc = 0;
 		raceActive = false;
 		raceStats = [];
+		toc = [];
+		tocOpen = false;
 		stopPacer();
 		isPaused = false;
 		infoMessage = '';
 	}
-
+ 
 	function onPastedSelect(event) {
 		const ta = event.target;
 		const start = ta.selectionStart;
@@ -898,7 +1044,7 @@
 			selectedWordCount = 0;
 		}
 	}
-
+ 
 	// Funkcija koja se okida na tap/klik po PDF kontejneru
 	function handlePdfTap() {
 		if (!paceActive && !raceActive) return;
@@ -906,18 +1052,20 @@
 		else pauseSession();
 	}
 </script>
-
+ 
 <!-- Oznaka pauze (fixed, ne smeta tapu na čitač) -->
 {#if isPaused}
 	<div class="paused-badge">⏸ PAUZIRANO</div>
 {/if}
+ 
+<!-- Progres na dnu -->
 {#if currentFileName}
-    <div class="progress-bottom">
-        <div class="progress-fill" style="width: {progressPercent}%"></div>
-        <span class="progress-label">str. {currentPage} / {totalPages} · {progressPercent}%</span>
-    </div>
+	<div class="progress-bottom">
+		<div class="progress-fill" style="width: {progressPercent}%"></div>
+		<span class="progress-label">str. {currentPage} / {totalPages} · {progressPercent}%</span>
+	</div>
 {/if}
-
+ 
 <div class="container-fluid" style="padding-bottom: 40px;">
 	<!-- 1. TOOLBAR -->
 	<div class="card mb-3 w-100 shadow-lg">
@@ -941,7 +1089,7 @@
 						</button>
 					{/if}
 				</div>
-
+ 
 				<!-- Kontrole za Font, Širinu i Margine -->
 				<div class="d-flex flex-wrap align-items-center gap-3">
 					<div class="toolbar-group d-flex align-items-center gap-2">
@@ -971,22 +1119,22 @@
 							<label class="form-check-label small" for="marginClipToggle">Odsijeci</label>
 						</div>
 					</div>
-
+ 
 					<!-- Margin Lijeva  -->
-
+ 
 					<!-- Kraj margine širine -->
 				</div>
 			</div>
 		</div>
 	</div>
-
+ 
 	{#if infoMessage}
 		<div class="alert alert-info py-1 px-2">{infoMessage}</div>
 	{/if}
 	{#if preparingSearch}
 		<div class="alert alert-secondary py-1 px-2">Priprema teksta za pretragu...</div>
 	{/if}
-
+ 
 	{#if !currentFileName}
 		<div class="card mb-3 shadow-lg">
 			<div class="card-body py-2">
@@ -1019,7 +1167,7 @@
 			</div>
 		</div>
 	{/if}
-
+ 
 	{#if currentFileName}
 		<div class="card mb-3">
 			<div class="card-body py-2">
@@ -1035,7 +1183,7 @@
 					<span class="info">{wordCountLabel}</span>
 					<span class="info">Stranica: {currentPage} / {totalPages}</span>
 				</div>
-
+ 
 				<input
 					type="search"
 					class="form-control form-control-sm"
@@ -1046,7 +1194,7 @@
 				{#if !searchReady && !preparingSearch}
 					<div class="info mt-1">Pretraga još nije spremna.</div>
 				{/if}
-
+ 
 				{#if searchResults.length > 0}
 					<div class="search-results border rounded p-2 mt-2">
 						<div class="info mb-1">Rezultata: {searchResults.length}</div>
@@ -1061,7 +1209,7 @@
 				{/if}
 			</div>
 		</div>
-
+ 
 		<div class="d-flex justify-content-center align-items-center gap-2 mb-2 flex-wrap">
 			<div class="btn-group">
 				<button
@@ -1090,8 +1238,32 @@
 				/>
 				<button class="btn btn-info" type="button" onclick={goToPage}>Idi</button>
 			</div>
+			{#if toc.length > 0}
+				<button
+					class="btn btn-outline-secondary btn-sm"
+					type="button"
+					onclick={() => (tocOpen = !tocOpen)}>📑 Sadržaj</button
+				>
+			{/if}
 		</div>
-
+ 
+		{#if tocOpen && toc.length > 0}
+			<div class="card mb-2">
+				<div class="card-body py-2 toc-list">
+					{#each toc as t, i}
+						<div
+							class="toc-item"
+							class:toc-current={i === currentTocIndex}
+							style="padding-left: {0.5 + t.level * 1.2}rem"
+							onclick={() => goToToc(t)}
+						>
+							{t.title} <span class="text-muted small">· str. {t.page}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+ 
 		<!-- JEDINSTVENA PAUZA/NASTAVI - pauzira i Race i Pacer zajedno -->
 		{#if raceActive || paceActive}
 			<div class="d-flex justify-content-center mb-2">
@@ -1106,7 +1278,7 @@
 				{/if}
 			</div>
 		{/if}
-
+ 
 		<!-- RACE -->
 		<div class="card mb-3">
 			<div class="card-body py-2 text-center">
@@ -1118,7 +1290,7 @@
 					<button class="btn btn-danger btn-sm" type="button" onclick={stopRace}>⏹ Stop Race</button
 					>
 				{/if}
-
+ 
 				{#if raceStats.length > 0}
 					<div class="race-stats mt-2">
 						{#each raceStats as s}
@@ -1136,7 +1308,7 @@
 						{/if}
 					</div>
 				{/if}
-
+ 
 				{#if raceCheckpoints.length > 0}
 					<div class="race-checkpoints mt-2">
 						<div class="info fw-bold">Provjere (kumulativno):</div>
@@ -1151,7 +1323,7 @@
 				{/if}
 			</div>
 		</div>
-
+ 
 		<!-- PACER -->
 		<div class="card mb-3">
 			<div class="card-body py-2 text-center">
@@ -1181,9 +1353,9 @@
 								value={podesavanja.paceChunkSize}
 							/>
 						</div>
-
+ 
 						<!-- BOLD SWITCH -->
-
+ 
 						<div class="btn-group" role="group">
 							<input
 								type="checkbox"
@@ -1195,7 +1367,7 @@
 							/>
 							<label class="btn btn-outline-success fw-bold" for="btnBoldToggle"> B </label>
 						</div>
-
+ 
 						<button class="btn btn-outline-primary btn-sm" type="button" onclick={startPacer}
 							>🎯 Pacer + 🏁 Race</button
 						>
@@ -1223,7 +1395,7 @@
 			</div>
 		</div>
 	{/if}
-
+ 
 	<div
 		class="reader-content-wrap shadow-lg"
 		id="reader-content-wrap"
@@ -1243,7 +1415,7 @@
 				style=" right: {podesavanja.marginRight}%;background:{podesavanja.marginBoja};width:{podesavanja.marginDebljina}px;"
 			></div>
 		{/if}
-
+ 
 		{#if currentFileName}
 			<div
 				bind:this={readerContentEl}
@@ -1265,7 +1437,7 @@
 			</div>
 		{/if}
 	</div>
-
+ 
 	{#if currentFileName}
 		<div class="d-flex justify-content-center mb-3">
 			<div class="btn-group">
@@ -1284,7 +1456,7 @@
 			</div>
 		</div>
 	{/if}
-
+ 
 	{#if currentFileName}
 		<div class="card mb-3">
 			<div class="card-body py-2">
@@ -1301,7 +1473,7 @@
 				</div>
 			</div>
 		</div>
-
+ 
 		<div class="card mb-3">
 			<div class="card-body py-2">
 				<div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
@@ -1322,7 +1494,7 @@
 		</div>
 	{/if}
 </div>
-
+ 
 <style>
 	.settings-container-bottom {
 		position: fixed;
@@ -1330,7 +1502,7 @@
 		left: 10px;
 		z-index: 1000;
 	}
-
+ 
 	.qt-settings {
 		background: none;
 		border: none;
@@ -1339,11 +1511,11 @@
 		display: inline-block;
 		transition: transform 0.4s ease;
 	}
-
+ 
 	.qt-settings:hover {
 		transform: rotate(90deg);
 	}
-
+ 
 	nav {
 		background-color: #f8f8f8;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -1370,7 +1542,7 @@
 		line-height: 1.6;
 		white-space: normal;
 	}
-
+ 
 	.word {
 		cursor: pointer;
 	}
@@ -1409,7 +1581,7 @@
 	.search-result-item:hover {
 		background: #f0f0f0;
 	}
-
+ 
 	/* Oznaka pauze */
 	.paused-badge {
 		position: fixed;
@@ -1425,32 +1597,53 @@
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 		pointer-events: none; /* tap/klik prolazi kroz nju do čitača */
 	}
+ 
+	/* Progres na dnu */
 	.progress-bottom {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	height: 20px;
-	background: #495057;
-	z-index: 2500;
-	pointer-events: none; /* ne smeta tapu na čitač */
-}
-
-.progress-fill {
-	height: 100%;
-	background: deepskyblue;
-	transition: width 0.3s ease;
-}
-
-.progress-label {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 13px;
-	font-weight: bold;
-	color: #fff;
-	text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
-}
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 20px;
+		background: #495057;
+		z-index: 2500;
+		pointer-events: none; /* ne smeta tapu na čitač */
+	}
+ 
+	.progress-fill {
+		height: 100%;
+		background: deepskyblue;
+		transition: width 0.3s ease;
+	}
+ 
+	.progress-label {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 13px;
+		font-weight: bold;
+		color: #fff;
+		text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+	}
+ 
+	/* Sadržaj (TOC) */
+	.toc-list {
+		max-height: 300px;
+		overflow-y: auto;
+	}
+	.toc-item {
+		padding: 4px 6px;
+		cursor: pointer;
+		border-bottom: 1px solid #eee;
+	}
+	.toc-item:hover {
+		background: #f0f0f0;
+	}
+	.toc-current {
+		font-weight: bold;
+		background: #cfe2ff;
+	}
 </style>
+ 
